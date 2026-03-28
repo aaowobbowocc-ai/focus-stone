@@ -1,11 +1,11 @@
 {
-    "name": "pet_rock",
-    "short_name": "pet_rock",
+    "name": "讀書石頭",
+    "short_name": "讀書石頭",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F5E6C8",
+    "theme_color": "#7B4F2E",
+    "description": "醫學生的專屬讀書陪伴寵物",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
