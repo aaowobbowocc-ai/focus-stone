@@ -133,6 +133,15 @@ class _HomePageState extends State<HomePage>
     // 初始化雲端用戶資料
     await FirebaseService.initUser(rockName: _rockName);
 
+    // 從 Firestore 同步金幣（雲端值優先，可由管理員發放）
+    final userData = await FirebaseService.getUserData();
+    final cloudCoins = (userData?['coins'] as int?) ?? 0;
+    if (cloudCoins > savedCoins) {
+      final prefs2 = await SharedPreferences.getInstance();
+      await prefs2.setInt('total_coins', cloudCoins);
+      if (mounted) setState(() => _coins = cloudCoins);
+    }
+
     final now = DateTime.now();
     final lateNight = now.hour >= 0 && now.hour < 5;
     final longAbsence = lastMs != null &&
