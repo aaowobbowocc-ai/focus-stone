@@ -12,6 +12,7 @@ class FriendsPage extends StatefulWidget {
 class _FriendsPageState extends State<FriendsPage> {
   String _myCode = '';
   List<Map<String, dynamic>> _friends = [];
+  List<Map<String, dynamic>> _requests = [];
   bool _loading = true;
   bool _isAnonymous = false;
 
@@ -24,31 +25,19 @@ class _FriendsPageState extends State<FriendsPage> {
   Future<void> _load() async {
     final code = await FirebaseService.getMyFriendCode();
     final friends = await FirebaseService.getFriends();
+    final requests = await FirebaseService.getPendingRequests();
     if (mounted) {
       setState(() {
         _myCode = code ?? '';
         _friends = friends;
+        _requests = requests;
         _isAnonymous = FirebaseService.isAnonymous;
         _loading = false;
       });
     }
   }
 
-  Future<void> _linkGoogle() async {
-    setState(() => _loading = true);
-    try {
-      await FirebaseService.linkWithGoogle();
-      _showSnack('已成功綁定 Google 帳號！資料已保留 🎉');
-    } catch (e) {
-      final msg = e.toString().contains('credential-already-in-use')
-          ? '此 Google 帳號已被其他用戶使用'
-          : '綁定失敗，請稍後再試';
-      _showSnack(msg);
-    }
-    _load();
-  }
-
-  Future<void> _addFriend() async {
+  Future<void> _sendRequest() async {
     final ctrl = TextEditingController();
     final code = await showDialog<String>(
       context: context,
@@ -109,13 +98,19 @@ class _FriendsPageState extends State<FriendsPage> {
       return;
     }
 
-    // 確認加入
+    // 檢查是否已是好友
+    final alreadyFriend = _friends.any((f) => f['uid'] == user['uid']);
+    if (alreadyFriend) {
+      _showSnack('你們已經是好友了 🪨');
+      return;
+    }
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: const Color(0xFFF5E6C8),
-        title: const Text('確認加入好友？', textAlign: TextAlign.center,
+        title: const Text('發送好友邀請？', textAlign: TextAlign.center,
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
         content: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -130,14 +125,25 @@ class _FriendsPageState extends State<FriendsPage> {
               child: const Text('取消', style: TextStyle(color: Color(0xFFAA8866)))),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('加入！', style: TextStyle(color: Color(0xFF7B4F2E), fontWeight: FontWeight.bold)),
+            child: const Text('送出！', style: TextStyle(color: Color(0xFF7B4F2E), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
     if (confirm != true) return;
-    await FirebaseService.addFriend(user['uid'] as String);
-    _showSnack('已加入 ${user['rockName']} 為好友 🎉');
+    await FirebaseService.sendFriendRequest(user['uid'] as String);
+    _showSnack('好友邀請已送出，等待 ${user['rockName']} 確認 🪨');
+  }
+
+  Future<void> _acceptRequest(Map<String, dynamic> req) async {
+    await FirebaseService.acceptFriendRequest(req['uid'] as String);
+    _showSnack('已接受 ${req['rockName']} 的好友邀請 🎉');
+    _load();
+  }
+
+  Future<void> _rejectRequest(Map<String, dynamic> req) async {
+    await FirebaseService.rejectFriendRequest(req['uid'] as String);
+    _showSnack('已拒絕邀請');
     _load();
   }
 
@@ -156,16 +162,23 @@ class _FriendsPageState extends State<FriendsPage> {
     );
   }
 
+  Future<void> _linkGoogle() async {
+    setState(() => _loading = true);
+    try {
+      await FirebaseService.linkWithGoogle();
+      _showSnack('已成功綁定 Google 帳號！資料已保留 🎉');
+    } catch (e) {
+      final msg = e.toString().contains('credential-already-in-use')
+          ? '此 Google 帳號已被其他用戶使用'
+          : '綁定失敗，請稍後再試';
+      _showSnack(msg);
+    }
+    _load();
+  }
+
   void _showSnack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg), backgroundColor: const Color(0xFF7B4F2E)));
-  }
-
-  String _formatDuration(int seconds) {
-    final h = seconds ~/ 3600;
-    final m = (seconds % 3600) ~/ 60;
-    if (h > 0) return '${h}時${m}分';
-    return '${m}分鐘';
   }
 
   @override
@@ -196,7 +209,7 @@ class _FriendsPageState extends State<FriendsPage> {
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   ),
                   IconButton(
-                    onPressed: _addFriend,
+                    onPressed: _sendRequest,
                     icon: const Icon(Icons.person_add, color: Colors.white, size: 22),
                   ),
                 ],
@@ -221,6 +234,7 @@ class _FriendsPageState extends State<FriendsPage> {
                         GestureDetector(
                           onTap: _linkGoogle,
                           child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                             decoration: BoxDecoration(
                               color: const Color(0xFFEDD9A3),
@@ -230,7 +244,7 @@ class _FriendsPageState extends State<FriendsPage> {
                             child: const Row(
                               children: [
                                 Text('G', style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF4285F4))),
+                                    fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF4285F4))),
                                 SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
@@ -248,25 +262,51 @@ class _FriendsPageState extends State<FriendsPage> {
                             ),
                           ),
                         ),
-                      const SizedBox(height: 16),
+
+                      // 待處理邀請
+                      if (_requests.isNotEmpty) ...[
+                        Row(
+                          children: [
+                            const Text('待確認邀請',
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF8B5E3C))),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF7B4F2E),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text('${_requests.length}',
+                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ..._requests.map((r) => _RequestCard(
+                          request: r,
+                          onAccept: () => _acceptRequest(r),
+                          onReject: () => _rejectRequest(r),
+                        )),
+                        const SizedBox(height: 16),
+                      ],
 
                       // 好友清單
-                      if (_friends.isEmpty)
+                      if (_friends.isEmpty && _requests.isEmpty)
                         const Center(
                           child: Padding(
-                            padding: EdgeInsets.only(top: 40),
+                            padding: EdgeInsets.only(top: 32),
                             child: Column(
                               children: [
                                 Text('🪨', style: TextStyle(fontSize: 48)),
                                 SizedBox(height: 12),
-                                Text('還沒有好友\n點右上角加入好友吧！',
+                                Text('還沒有好友\n點右上角輸入邀請碼吧！',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(fontSize: 15, color: Color(0xFF8B5E3C), height: 1.6)),
                               ],
                             ),
                           ),
                         )
-                      else ...[
+                      else if (_friends.isNotEmpty) ...[
                         const Text('好友清單',
                             style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF8B5E3C))),
                         const SizedBox(height: 8),
@@ -274,10 +314,27 @@ class _FriendsPageState extends State<FriendsPage> {
                           friend: f,
                           onTap: () => _viewFriendHistory(f),
                           onRemove: () async {
-                            await FirebaseService.removeFriend(f['uid'] as String);
-                            _load();
+                            final ok = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                backgroundColor: const Color(0xFFF5E6C8),
+                                title: const Text('刪除好友？', style: TextStyle(color: Color(0xFF4A2C0A))),
+                                content: const Text('雙方都會移除好友關係',
+                                    style: TextStyle(fontSize: 13, color: Color(0xFF8B5E3C))),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx, false),
+                                      child: const Text('取消', style: TextStyle(color: Color(0xFFAA8866)))),
+                                  TextButton(onPressed: () => Navigator.pop(ctx, true),
+                                      child: const Text('刪除', style: TextStyle(color: Colors.red))),
+                                ],
+                              ),
+                            );
+                            if (ok == true) {
+                              await FirebaseService.removeFriend(f['uid'] as String);
+                              _load();
+                            }
                           },
-                          formatDuration: _formatDuration,
                         )),
                       ],
                     ],
@@ -334,19 +391,81 @@ class _MyCodeCard extends StatelessWidget {
   }
 }
 
+// ── 待確認邀請卡片 ──────────────────────────────────────
+class _RequestCard extends StatelessWidget {
+  final Map<String, dynamic> request;
+  final VoidCallback onAccept;
+  final VoidCallback onReject;
+
+  const _RequestCard({required this.request, required this.onAccept, required this.onReject});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3E0),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFD4A056), width: 1.5),
+        boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: Row(
+        children: [
+          const Text('🪨', style: TextStyle(fontSize: 26)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(request['rockName'] ?? '無名石頭',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
+                const Text('想加你為好友',
+                    style: TextStyle(fontSize: 11, color: Color(0xFFAA7722))),
+              ],
+            ),
+          ),
+          Row(
+            children: [
+              GestureDetector(
+                onTap: onAccept,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7B4F2E),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text('接受', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: onReject,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEDD9A3),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFAA8866)),
+                  ),
+                  child: const Text('拒絕', style: TextStyle(color: Color(0xFF8B5E3C), fontSize: 13)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ── 好友卡片 ────────────────────────────────────────────
 class _FriendCard extends StatelessWidget {
   final Map<String, dynamic> friend;
   final VoidCallback onTap;
   final VoidCallback onRemove;
-  final String Function(int) formatDuration;
 
-  const _FriendCard({
-    required this.friend,
-    required this.onTap,
-    required this.onRemove,
-    required this.formatDuration,
-  });
+  const _FriendCard({required this.friend, required this.onTap, required this.onRemove});
 
   @override
   Widget build(BuildContext context) {
@@ -371,32 +490,16 @@ class _FriendCard extends StatelessWidget {
                 children: [
                   Text(friend['rockName'] ?? '無名石頭',
                       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
-                  Text('點擊查看讀書紀錄',
-                      style: const TextStyle(fontSize: 11, color: Color(0xFFAA8866))),
+                  const Text('點擊查看讀書紀錄',
+                      style: TextStyle(fontSize: 11, color: Color(0xFFAA8866))),
                 ],
               ),
             ),
             GestureDetector(
-              onTap: () async {
-                final ok = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    backgroundColor: const Color(0xFFF5E6C8),
-                    title: const Text('移除好友？', style: TextStyle(color: Color(0xFF4A2C0A))),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('取消', style: TextStyle(color: Color(0xFFAA8866)))),
-                      TextButton(onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('移除', style: TextStyle(color: Colors.red))),
-                    ],
-                  ),
-                );
-                if (ok == true) onRemove();
-              },
+              onTap: onRemove,
               child: const Padding(
                 padding: EdgeInsets.only(left: 8),
-                child: Icon(Icons.close, size: 18, color: Color(0xFFAA8866)),
+                child: Icon(Icons.person_remove, size: 20, color: Color(0xFFAA8866)),
               ),
             ),
           ],

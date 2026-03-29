@@ -94,15 +94,45 @@ class FirebaseService {
     return {'uid': doc.id, ...doc.data()};
   }
 
-  // ── 好友清單 ────────────────────────────────────────
-  static Future<void> addFriend(String friendUid) async {
+  // ── 好友邀請 ────────────────────────────────────────
+  /// 發送好友邀請（寫入對方的 friendRequests 子集合）
+  static Future<void> sendFriendRequest(String toUid) async {
     final id = uid;
-    if (id == null || friendUid == id) return;
-    await _db.collection('users').doc(id).collection('friends').doc(friendUid).set({
-      'addedAt': FieldValue.serverTimestamp(),
+    if (id == null || toUid == id) return;
+    final myData = await getUserData();
+    await _db.collection('users').doc(toUid).collection('friendRequests').doc(id).set({
+      'fromUid': id,
+      'rockName': myData?['rockName'] ?? '',
+      'sentAt': FieldValue.serverTimestamp(),
     });
   }
 
+  /// 取得我的待處理邀請
+  static Future<List<Map<String, dynamic>>> getPendingRequests() async {
+    final id = uid;
+    if (id == null) return [];
+    final snap = await _db.collection('users').doc(id).collection('friendRequests').get();
+    return snap.docs.map((d) => {'uid': d.id, ...d.data()}).toList();
+  }
+
+  /// 接受好友邀請：雙方互加
+  static Future<void> acceptFriendRequest(String fromUid) async {
+    final id = uid;
+    if (id == null) return;
+    final now = FieldValue.serverTimestamp();
+    await _db.collection('users').doc(id).collection('friends').doc(fromUid).set({'addedAt': now});
+    await _db.collection('users').doc(fromUid).collection('friends').doc(id).set({'addedAt': now});
+    await _db.collection('users').doc(id).collection('friendRequests').doc(fromUid).delete();
+  }
+
+  /// 拒絕好友邀請
+  static Future<void> rejectFriendRequest(String fromUid) async {
+    final id = uid;
+    if (id == null) return;
+    await _db.collection('users').doc(id).collection('friendRequests').doc(fromUid).delete();
+  }
+
+  // ── 好友清單 ────────────────────────────────────────
   static Future<List<Map<String, dynamic>>> getFriends() async {
     final id = uid;
     if (id == null) return [];
@@ -117,10 +147,12 @@ class FirebaseService {
     return friends;
   }
 
+  /// 刪除好友：雙方同時移除
   static Future<void> removeFriend(String friendUid) async {
     final id = uid;
     if (id == null) return;
     await _db.collection('users').doc(id).collection('friends').doc(friendUid).delete();
+    await _db.collection('users').doc(friendUid).collection('friends').doc(id).delete();
   }
 
   // ── 讀書紀錄同步 ────────────────────────────────────
