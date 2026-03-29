@@ -1,24 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="/focus-stone/">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="醫學生的專屬讀書陪伴寵物">
+
+  <!-- 禁止瀏覽器自行快取 index.html，確保每次都抓最新版 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -31,6 +23,34 @@
 
   <title>讀書石頭</title>
   <link rel="manifest" href="manifest.json">
+
+  <script>
+    // 監聽 Service Worker 更新，通知 Flutter 層
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        // SW 換版時觸發，通知 Flutter 顯示更新 SnackBar
+        if (window._flutterSWUpdateCallback) {
+          window._flutterSWUpdateCallback();
+        }
+      });
+
+      navigator.serviceWorker.ready.then(function (reg) {
+        reg.addEventListener('updatefound', function () {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', function () {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              if (window._flutterSWUpdateCallback) {
+                window._flutterSWUpdateCallback();
+              }
+            }
+          });
+        });
+
+        // 每次開啟頁面主動檢查更新
+        reg.update();
+      });
+    }
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
