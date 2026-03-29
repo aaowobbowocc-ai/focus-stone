@@ -168,6 +168,21 @@ class _HomePageState extends State<HomePage>
     _showBubble();
   }
 
+  // 從商店/其他頁面返回時，只更新金幣和已擁有造型，不重新問名字
+  Future<void> _refreshShopData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedCoins = prefs.getInt('total_coins') ?? 0;
+    final ownedStr = prefs.getStringList('owned_avatars');
+    final savedOwned = ownedStr != null
+        ? ownedStr.map(int.parse).toList()
+        : List<int>.generate(StoneAvatar.count, (i) => i);
+    if (!mounted) return;
+    setState(() {
+      _coins = savedCoins;
+      _ownedAvatars = savedOwned;
+    });
+  }
+
   Future<void> _renameRock({bool isFirstTime = false}) async {
     final ctrl = TextEditingController(text: _rockName);
     final newName = await showDialog<String>(
@@ -215,7 +230,7 @@ class _HomePageState extends State<HomePage>
         ],
       ),
     );
-    if (newName == null) return;
+    if (newName == null || newName.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('rock_name', newName);
     if (mounted) setState(() => _rockName = newName);
@@ -262,7 +277,7 @@ class _HomePageState extends State<HomePage>
             onPressed: () {
               Navigator.pop(ctx);
               Navigator.push(context, MaterialPageRoute(builder: (_) => const ShopPage()))
-                  .then((_) => _init());
+                  .then((_) => _refreshShopData());
             },
             child: const Text('前往商店 🛒', style: TextStyle(color: Color(0xFF7B4F2E), fontWeight: FontWeight.bold)),
           ),
@@ -901,7 +916,7 @@ class _HomePageState extends State<HomePage>
                 _TopButton(
                   icon: Icons.storefront,
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShopPage()))
-                      .then((_) => _init()),
+                      .then((_) => _refreshShopData()),
                 ),
               ],
             ),
