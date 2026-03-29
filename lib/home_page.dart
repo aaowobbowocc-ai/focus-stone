@@ -8,6 +8,7 @@ import 'study_history.dart';
 import 'history_page.dart';
 import 'friends_page.dart';
 import 'firebase_service.dart';
+import 'stone_avatar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -36,8 +37,9 @@ class _HomePageState extends State<HomePage>
   String _currentQuote = '點我看看會發生什麼事。';
   final Random _random = Random();
 
-  // ── 石頭名字 ──
+  // ── 石頭名字 & 頭像 ──
   String _rockName = '';
+  int _avatarId = 0;
 
   // ── 讀書計時 ──
   bool _isStudying = false;
@@ -107,9 +109,13 @@ class _HomePageState extends State<HomePage>
     final lastMs = prefs.getInt('last_opened');
     await prefs.setInt('last_opened', DateTime.now().millisecondsSinceEpoch);
     final savedName = prefs.getString('rock_name') ?? '';
+    final savedAvatar = prefs.getInt('avatar_id') ?? 0;
     if (!mounted) return;
 
-    setState(() => _rockName = savedName);
+    setState(() {
+      _rockName = savedName;
+      _avatarId = savedAvatar;
+    });
 
     // 第一次啟動：提示命名
     if (savedName.isEmpty) {
@@ -184,6 +190,54 @@ class _HomePageState extends State<HomePage>
     await prefs.setString('rock_name', newName);
     if (mounted) setState(() => _rockName = newName);
     await FirebaseService.updateRockName(newName);
+  }
+
+  Future<void> _pickAvatar() async {
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: const Color(0xFFF5E6C8),
+        title: const Text('選擇頭像', textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
+        content: SizedBox(
+          width: 280,
+          child: GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            children: List.generate(StoneAvatar.count, (i) {
+              return GestureDetector(
+                onTap: () => Navigator.pop(ctx, i),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    StoneAvatar(id: i, size: 64, selected: _avatarId == i),
+                    const SizedBox(height: 4),
+                    Text(StoneAvatar.labels[i],
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: _avatarId == i ? const Color(0xFF7B4F2E) : const Color(0xFF8B5E3C),
+                          fontWeight: _avatarId == i ? FontWeight.bold : FontWeight.normal,
+                        )),
+                  ],
+                ),
+              );
+            }),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx),
+              child: const Text('取消', style: TextStyle(color: Color(0xFFAA8866)))),
+        ],
+      ),
+    );
+    if (picked == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('avatar_id', picked);
+    if (mounted) setState(() => _avatarId = picked);
+    await FirebaseService.updateAvatar(picked);
   }
 
   void _scheduleMidStudyMessage() {
@@ -671,48 +725,63 @@ class _HomePageState extends State<HomePage>
             ),
           ),
 
-          // ── 標題（點擊改名） ──
-          Positioned(
-            top: topPad + 30,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: GestureDetector(
-                onTap: () => _renameRock(),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _rockName.isEmpty ? '我的小石頭' : _rockName,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF4A2C0A),
-                        shadows: [Shadow(color: Colors.white60, blurRadius: 6)],
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.edit, size: 13, color: Color(0xFF8B5E3C)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // ── 日曆 + 好友按鈕（背景圖左上角） ──
+          // ── 左上角：頭像 + 石頭名 + 日曆/好友按鈕 ──
           Positioned(
             top: _imgTop(size) + 14,
             left: _imgLeft(size) + 14,
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _TopButton(
-                  icon: Icons.calendar_month,
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryPage())),
+                // 頭像 + 名字橫排
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: _pickAvatar,
+                      child: StoneAvatar(id: _avatarId, size: 52, selected: true),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => _renameRock(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEDD9A3).withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF8B5E3C), width: 1.5),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _rockName.isEmpty ? '我的小石頭' : _rockName,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF4A2C0A),
+                              ),
+                            ),
+                            const SizedBox(width: 3),
+                            const Icon(Icons.edit, size: 11, color: Color(0xFF8B5E3C)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                _TopButton(
-                  icon: Icons.people,
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FriendsPage())),
+                const SizedBox(height: 10),
+                // 日曆 + 好友按鈕
+                Row(
+                  children: [
+                    _TopButton(
+                      icon: Icons.calendar_month,
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryPage())),
+                    ),
+                    const SizedBox(width: 10),
+                    _TopButton(
+                      icon: Icons.people,
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FriendsPage())),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -63,6 +63,12 @@ class FirebaseService {
     await _db.collection('users').doc(id).set({'rockName': name}, SetOptions(merge: true));
   }
 
+  static Future<void> updateAvatar(int avatarId) async {
+    final id = uid;
+    if (id == null) return;
+    await _db.collection('users').doc(id).set({'avatarId': avatarId}, SetOptions(merge: true));
+  }
+
   // ── 好友碼 ──────────────────────────────────────────
   static String _generateFriendCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -103,6 +109,7 @@ class FirebaseService {
     await _db.collection('users').doc(toUid).collection('friendRequests').doc(id).set({
       'fromUid': id,
       'rockName': myData?['rockName'] ?? '',
+      'avatarId': myData?['avatarId'] ?? 0,
       'sentAt': FieldValue.serverTimestamp(),
     });
   }

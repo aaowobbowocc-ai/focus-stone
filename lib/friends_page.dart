@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'firebase_service.dart';
+import 'stone_avatar.dart';
 
 class FriendsPage extends StatefulWidget {
   const FriendsPage({super.key});
@@ -157,6 +158,7 @@ class _FriendsPageState extends State<FriendsPage> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => _FriendHistorySheet(
         friendName: friend['rockName'] ?? '無名石頭',
+        avatarId: (friend['avatarId'] as int? ?? 0).clamp(0, 4),
         sessions: sessions,
       ),
     );
@@ -412,7 +414,7 @@ class _RequestCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Text('🪨', style: TextStyle(fontSize: 26)),
+          StoneAvatar(id: (request['avatarId'] as int? ?? 0).clamp(0, 4), size: 40),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -469,6 +471,7 @@ class _FriendCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final avatarId = (friend['avatarId'] as int? ?? 0).clamp(0, 4);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -482,7 +485,7 @@ class _FriendCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Text('🪨', style: TextStyle(fontSize: 28)),
+            StoneAvatar(id: avatarId, size: 44),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -512,9 +515,10 @@ class _FriendCard extends StatelessWidget {
 // ── 好友讀書紀錄底部彈出 ────────────────────────────────
 class _FriendHistorySheet extends StatelessWidget {
   final String friendName;
+  final int avatarId;
   final List<Map<String, dynamic>> sessions;
 
-  const _FriendHistorySheet({required this.friendName, required this.sessions});
+  const _FriendHistorySheet({required this.friendName, required this.avatarId, required this.sessions});
 
   String _formatDuration(int seconds) {
     final h = seconds ~/ 3600;
@@ -532,8 +536,15 @@ class _FriendHistorySheet extends StatelessWidget {
         const SizedBox(height: 12),
         Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.brown.withOpacity(0.3), borderRadius: BorderRadius.circular(2))),
         const SizedBox(height: 12),
-        Text('$friendName 的讀書紀錄',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            StoneAvatar(id: avatarId, size: 36),
+            const SizedBox(width: 8),
+            Text('$friendName 的讀書紀錄',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
+          ],
+        ),
         const SizedBox(height: 12),
         if (sessions.isEmpty)
           const Expanded(child: Center(child: Text('還沒有紀錄', style: TextStyle(color: Color(0xFF8B5E3C)))))
