@@ -37,9 +37,10 @@ class _HomePageState extends State<HomePage>
   String _currentQuote = '點我看看會發生什麼事。';
   final Random _random = Random();
 
-  // ── 石頭名字 & 頭像 ──
+  // ── 石頭名字 & 頭像 & 連續天數 ──
   String _rockName = '';
   int _avatarId = 0;
+  int _streak = 0;
 
   // ── 讀書計時 ──
   bool _isStudying = false;
@@ -121,6 +122,10 @@ class _HomePageState extends State<HomePage>
     if (savedName.isEmpty) {
       await _renameRock(isFirstTime: true);
     }
+
+    // 計算連續讀書天數
+    final allSessions = await StudyHistory.load();
+    if (mounted) setState(() => _streak = calculateStreak(allSessions));
 
     // 初始化雲端用戶資料
     await FirebaseService.initUser(rockName: _rockName);
@@ -734,10 +739,26 @@ class _HomePageState extends State<HomePage>
               children: [
                 // 頭像 + 名字橫排
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    GestureDetector(
-                      onTap: _pickAvatar,
-                      child: StoneAvatar(id: _avatarId, size: 52, selected: true),
+                    Column(
+                      children: [
+                        GestureDetector(
+                          onTap: _pickAvatar,
+                          child: StoneAvatar(id: _avatarId, size: 52, selected: true),
+                        ),
+                        if (_streak > 0)
+                          Container(
+                            margin: const EdgeInsets.only(top: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF8C00),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text('🔥 $_streak天',
+                                style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                      ],
                     ),
                     const SizedBox(width: 8),
                     GestureDetector(

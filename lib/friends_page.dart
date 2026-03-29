@@ -15,6 +15,7 @@ class _FriendsPageState extends State<FriendsPage> {
   String _myCode = '';
   List<Map<String, dynamic>> _friends = [];
   List<Map<String, dynamic>> _requests = [];
+  List<Map<String, dynamic>> _leaderboard = [];
   bool _loading = true;
 
   @override
@@ -30,14 +31,16 @@ class _FriendsPageState extends State<FriendsPage> {
       final friendsFuture = FirebaseService.getFriends();
       final requestsFuture = FirebaseService.getPendingRequests();
       final results = await Future.wait([codeFuture, friendsFuture, requestsFuture]);
-      if (mounted) {
-        setState(() {
-          _myCode = (results[0] as String?) ?? '';
-          _friends = (results[1] as List).cast<Map<String, dynamic>>();
-          _requests = (results[2] as List).cast<Map<String, dynamic>>();
-          _loading = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _myCode = (results[0] as String?) ?? '';
+        _friends = (results[1] as List).cast<Map<String, dynamic>>();
+        _requests = (results[2] as List).cast<Map<String, dynamic>>();
+        _loading = false;
+      });
+      // 好友載入完成後再載入排行榜（依賴好友清單）
+      final lb = await FirebaseService.getLeaderboardData();
+      if (mounted) setState(() => _leaderboard = lb);
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
@@ -238,6 +241,15 @@ class _FriendsPageState extends State<FriendsPage> {
                       // 我的邀請碼卡片
                       _MyCodeCard(code: _myCode),
                       const SizedBox(height: 12),
+
+                      // 本週排行榜
+                      if (_leaderboard.isNotEmpty) ...[
+                        const Text('本週排行榜',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF8B5E3C))),
+                        const SizedBox(height: 8),
+                        _LeaderboardCard(entries: _leaderboard),
+                        const SizedBox(height: 12),
+                      ],
 
                       // 匿名用戶：綁定 Google 提示
                       if (FirebaseService.isAnonymous)
@@ -515,6 +527,91 @@ class _FriendCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── 本週排行榜 ──────────────────────────────────────────
+class _LeaderboardCard extends StatelessWidget {
+  final List<Map<String, dynamic>> entries;
+  const _LeaderboardCard({required this.entries});
+
+  @override
+  Widget build(BuildContext context) {
+    const medals = ['🥇', '🥈', '🥉'];
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFEDD9A3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF8B5E3C), width: 1.5),
+        boxShadow: [BoxShadow(color: Colors.brown.withOpacity(0.12), blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: Column(
+        children: [
+          for (int i = 0; i < entries.length; i++) ...[
+            if (i > 0)
+              Divider(height: 1, color: Colors.brown.withOpacity(0.15), indent: 12, endIndent: 12),
+            _LeaderboardRow(
+              rank: i + 1,
+              medal: i < 3 ? medals[i] : '${i + 1}',
+              entry: entries[i],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _LeaderboardRow extends StatelessWidget {
+  final int rank;
+  final String medal;
+  final Map<String, dynamic> entry;
+  const _LeaderboardRow({required this.rank, required this.medal, required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelf = entry['isSelf'] as bool? ?? false;
+    final avatarId = (entry['avatarId'] as int? ?? 0).clamp(0, 4);
+    final name = entry['rockName'] as String? ?? '無名石頭';
+    final secs = entry['weeklySeconds'] as int? ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: isSelf ? const Color(0xFF7B4F2E).withOpacity(0.08) : Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 28,
+            child: Text(medal,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: rank <= 3 ? 18 : 13,
+                    fontWeight: FontWeight.bold, color: const Color(0xFF8B5E3C))),
+          ),
+          const SizedBox(width: 8),
+          StoneAvatar(id: avatarId, size: 34),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              isSelf ? '$name（我）' : name,
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isSelf ? FontWeight.bold : FontWeight.normal,
+                  color: const Color(0xFF4A2C0A)),
+            ),
+          ),
+          Text(
+            secs > 0 ? formatStudyDuration(secs) : '—',
+            style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: secs > 0 ? const Color(0xFF7B4F2E) : const Color(0xFFAA8866)),
+          ),
+        ],
       ),
     );
   }

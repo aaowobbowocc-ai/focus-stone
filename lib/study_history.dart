@@ -41,6 +41,60 @@ String formatStudyDuration(int seconds) {
   return '${s}秒';
 }
 
+/// 計算目前連續讀書天數（今天或昨天有讀書才算連續）
+int calculateStreak(List<StudySession> sessions) {
+  if (sessions.isEmpty) return 0;
+  final studyDays = sessions
+      .map((s) => DateTime(s.date.year, s.date.month, s.date.day))
+      .toSet();
+  final today = DateTime.now();
+  final todayDate = DateTime(today.year, today.month, today.day);
+  // 從今天開始往回數，若今天沒有則從昨天開始
+  DateTime check = studyDays.contains(todayDate)
+      ? todayDate
+      : todayDate.subtract(const Duration(days: 1));
+  int streak = 0;
+  while (studyDays.contains(check)) {
+    streak++;
+    check = check.subtract(const Duration(days: 1));
+  }
+  return streak;
+}
+
+/// 計算歷史最長連續天數
+int calculateLongestStreak(List<StudySession> sessions) {
+  if (sessions.isEmpty) return 0;
+  final days = sessions
+      .map((s) => DateTime(s.date.year, s.date.month, s.date.day))
+      .toSet()
+      .toList()
+    ..sort();
+  int longest = 1, current = 1;
+  for (int i = 1; i < days.length; i++) {
+    if (days[i].difference(days[i - 1]).inDays == 1) {
+      current++;
+      if (current > longest) longest = current;
+    } else {
+      current = 1;
+    }
+  }
+  return longest;
+}
+
+/// 回傳最近 [days] 天每天的讀書秒數，index 0 = 最舊，最後一個 = 今天
+List<int> getDailySeconds(List<StudySession> sessions, int days) {
+  final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+  final result = List<int>.filled(days, 0);
+  for (final s in sessions) {
+    final d = DateTime(s.date.year, s.date.month, s.date.day);
+    final diff = today.difference(d).inDays;
+    if (diff >= 0 && diff < days) {
+      result[days - 1 - diff] += s.durationSeconds;
+    }
+  }
+  return result;
+}
+
 class StudyHistory {
   static const _key = 'study_sessions';
 

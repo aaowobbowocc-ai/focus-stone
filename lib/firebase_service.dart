@@ -164,6 +164,50 @@ class FirebaseService {
     await _db.collection('users').doc(friendUid).collection('friends').doc(id).delete();
   }
 
+  // ── 好友排行榜 ──────────────────────────────────────────
+  static Future<int> _getWeeklySeconds(String userId, DateTime weekStart) async {
+    try {
+      final snap = await _db
+          .collection('users')
+          .doc(userId)
+          .collection('sessions')
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(weekStart))
+          .get();
+      return snap.docs.fold<int>(0, (sum, d) => sum + ((d.data()['duration'] as int?) ?? 0));
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// 回傳自己 + 好友本週讀書秒數排行，含 uid / rockName / avatarId / weeklySeconds / isSelf
+  static Future<List<Map<String, dynamic>>> getLeaderboardData() async {
+    final id = uid;
+    if (id == null) return [];
+    final now = DateTime.now();
+    final weekStart = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
+
+    final selfDataFuture = getUserData();
+    final friendsFuture = getFriends();
+    final selfData = await selfDataFuture;
+    final friends = await friendsFuture;
+
+    final allEntries = <Map<String, dynamic>>[
+      {'uid': id, 'rockName': selfData?['rockName'] ?? '', 'avatarId': (selfData?['avatarId'] as int?) ?? 0, 'isSelf': true},
+      for (final f in friends)
+        {'uid': f['uid'], 'rockName': f['rockName'] ?? '', 'avatarId': (f['avatarId'] as int?) ?? 0, 'isSelf': false},
+    ];
+
+    final weeklyList = await Future.wait(
+      allEntries.map((e) => _getWeeklySeconds(e['uid'] as String, weekStart)),
+    );
+
+    return [
+      for (int i = 0; i < allEntries.length; i++)
+        {...allEntries[i], 'weeklySeconds': weeklyList[i]},
+    ]..sort((a, b) => (b['weeklySeconds'] as int).compareTo(a['weeklySeconds'] as int));
+  }
+
   // ── 讀書紀錄同步 ────────────────────────────────────
   static Future<void> syncSession({
     required DateTime date,
