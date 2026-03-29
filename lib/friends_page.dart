@@ -24,19 +24,25 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 
   Future<void> _load() async {
-    final codeFuture = FirebaseService.getMyFriendCode();
-    final friendsFuture = FirebaseService.getFriends();
-    final requestsFuture = FirebaseService.getPendingRequests();
-    final code = await codeFuture;
-    final friends = await friendsFuture;
-    final requests = await requestsFuture;
-    if (mounted) {
-      setState(() {
-        _myCode = code ?? '';
-        _friends = friends;
-        _requests = requests;
-        _loading = false;
-      });
+    if (mounted) setState(() => _loading = true);
+    try {
+      final codeFuture = FirebaseService.getMyFriendCode();
+      final friendsFuture = FirebaseService.getFriends();
+      final requestsFuture = FirebaseService.getPendingRequests();
+      final results = await Future.wait([codeFuture, friendsFuture, requestsFuture]);
+      if (mounted) {
+        setState(() {
+          _myCode = (results[0] as String?) ?? '';
+          _friends = (results[1] as List).cast<Map<String, dynamic>>();
+          _requests = (results[2] as List).cast<Map<String, dynamic>>();
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
+        _showSnack('載入失敗，請稍後再試');
+      }
     }
   }
 
