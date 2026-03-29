@@ -144,14 +144,16 @@ class FirebaseService {
     final id = uid;
     if (id == null) return [];
     final snap = await _db.collection('users').doc(id).collection('friends').get();
-    final friends = <Map<String, dynamic>>[];
-    for (final doc in snap.docs) {
-      final userSnap = await _db.collection('users').doc(doc.id).get();
-      if (userSnap.exists) {
-        friends.add({'uid': doc.id, ...userSnap.data()!});
-      }
-    }
-    return friends;
+    if (snap.docs.isEmpty) return [];
+    // 平行讀取所有好友資料
+    final userSnaps = await Future.wait(
+      snap.docs.map((d) => _db.collection('users').doc(d.id).get()),
+    );
+    return [
+      for (int i = 0; i < snap.docs.length; i++)
+        if (userSnaps[i].exists)
+          {'uid': snap.docs[i].id, ...userSnaps[i].data()!},
+    ];
   }
 
   /// 刪除好友：雙方同時移除

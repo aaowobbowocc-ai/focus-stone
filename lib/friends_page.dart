@@ -24,14 +24,16 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 
   Future<void> _load() async {
-    final code = await FirebaseService.getMyFriendCode();
-    final friends = await FirebaseService.getFriends();
-    final requests = await FirebaseService.getPendingRequests();
+    final results = await Future.wait([
+      FirebaseService.getMyFriendCode(),
+      FirebaseService.getFriends(),
+      FirebaseService.getPendingRequests(),
+    ]);
     if (mounted) {
       setState(() {
-        _myCode = code ?? '';
-        _friends = friends;
-        _requests = requests;
+        _myCode = (results[0] as String?) ?? '';
+        _friends = results[1] as List<Map<String, dynamic>>;
+        _requests = results[2] as List<Map<String, dynamic>>;
         _isAnonymous = FirebaseService.isAnonymous;
         _loading = false;
       });
