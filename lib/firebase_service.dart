@@ -55,8 +55,15 @@ class FirebaseService {
   }
 
   static Future<String?> getMyFriendCode() async {
+    final id = uid;
+    if (id == null) return null;
     final data = await getUserData();
-    return data?['friendCode'] as String?;
+    if (data == null) return null;
+    if (data['friendCode'] != null) return data['friendCode'] as String;
+    // 舊帳號沒有邀請碼，補產生一個
+    final code = _generateFriendCode();
+    await _db.collection('users').doc(id).set({'friendCode': code}, SetOptions(merge: true));
+    return code;
   }
 
   /// 用好友碼搜尋用戶，回傳 {uid, rockName, friendCode} 或 null
