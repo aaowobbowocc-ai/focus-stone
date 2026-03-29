@@ -169,7 +169,7 @@ class _FriendsPageState extends State<FriendsPage> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => _FriendHistorySheet(
         friendName: friend['rockName'] ?? '無名石頭',
-        avatarId: (friend['avatarId'] as int? ?? 0).clamp(0, 4),
+        avatarId: (friend['avatarId'] as int? ?? 0).clamp(0, StoneAvatar.totalCount - 1),
         sessions: sessions,
       ),
     );
@@ -434,7 +434,7 @@ class _RequestCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          StoneAvatar(id: (request['avatarId'] as int? ?? 0).clamp(0, 4), size: 40),
+          StoneAvatar(id: (request['avatarId'] as int? ?? 0).clamp(0, StoneAvatar.totalCount - 1), size: 40),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -491,7 +491,7 @@ class _FriendCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatarId = (friend['avatarId'] as int? ?? 0).clamp(0, 4);
+    final avatarId = (friend['avatarId'] as int? ?? 0).clamp(0, StoneAvatar.totalCount - 1);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -573,7 +573,7 @@ class _LeaderboardRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSelf = entry['isSelf'] as bool? ?? false;
-    final avatarId = (entry['avatarId'] as int? ?? 0).clamp(0, 4);
+    final avatarId = (entry['avatarId'] as int? ?? 0).clamp(0, StoneAvatar.totalCount - 1);
     final name = entry['rockName'] as String? ?? '無名石頭';
     final secs = entry['weeklySeconds'] as int? ?? 0;
 

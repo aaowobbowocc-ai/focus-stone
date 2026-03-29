@@ -7,6 +7,7 @@ import 'messages.dart';
 import 'study_history.dart';
 import 'history_page.dart';
 import 'friends_page.dart';
+import 'shop_page.dart';
 import 'firebase_service.dart';
 import 'stone_avatar.dart';
 
@@ -42,6 +43,7 @@ class _HomePageState extends State<HomePage>
   int _avatarId = 0;
   int _streak = 0;
   int _coins = 0;
+  List<int> _ownedAvatars = List.generate(StoneAvatar.count, (i) => i);
 
   // ── 讀書計時 ──
   bool _isStudying = false;
@@ -113,12 +115,17 @@ class _HomePageState extends State<HomePage>
     final savedName = prefs.getString('rock_name') ?? '';
     final savedAvatar = prefs.getInt('avatar_id') ?? 0;
     final savedCoins = prefs.getInt('total_coins') ?? 0;
+    final ownedStr = prefs.getStringList('owned_avatars');
+    final savedOwned = ownedStr != null
+        ? ownedStr.map(int.parse).toList()
+        : List<int>.generate(StoneAvatar.count, (i) => i);
     if (!mounted) return;
 
     setState(() {
       _rockName = savedName;
       _avatarId = savedAvatar;
       _coins = savedCoins;
+      _ownedAvatars = savedOwned;
     });
 
     // 第一次啟動：提示命名
@@ -133,13 +140,19 @@ class _HomePageState extends State<HomePage>
     // 初始化雲端用戶資料
     await FirebaseService.initUser(rockName: _rockName);
 
-    // 從 Firestore 同步金幣（雲端值優先，可由管理員發放）
+    // 從 Firestore 同步金幣與已購頭像（雲端值優先）
     final userData = await FirebaseService.getUserData();
     final cloudCoins = (userData?['coins'] as int?) ?? 0;
+    final cloudOwnedRaw = userData?['ownedAvatars'] as List<dynamic>?;
+    final cloudOwned = cloudOwnedRaw?.map((e) => e as int).toList();
+    final prefs2 = await SharedPreferences.getInstance();
     if (cloudCoins > savedCoins) {
-      final prefs2 = await SharedPreferences.getInstance();
       await prefs2.setInt('total_coins', cloudCoins);
       if (mounted) setState(() => _coins = cloudCoins);
+    }
+    if (cloudOwned != null && cloudOwned.length > savedOwned.length) {
+      await prefs2.setStringList('owned_avatars', cloudOwned.map((e) => e.toString()).toList());
+      if (mounted) setState(() => _ownedAvatars = cloudOwned);
     }
 
     final now = DateTime.now();
@@ -224,7 +237,7 @@ class _HomePageState extends State<HomePage>
             shrinkWrap: true,
             mainAxisSpacing: 16,
             crossAxisSpacing: 16,
-            children: List.generate(StoneAvatar.count, (i) {
+            children: _ownedAvatars.map((i) {
               return GestureDetector(
                 onTap: () => Navigator.pop(ctx, i),
                 child: Column(
@@ -232,7 +245,7 @@ class _HomePageState extends State<HomePage>
                   children: [
                     StoneAvatar(id: i, size: 64, selected: _avatarId == i),
                     const SizedBox(height: 4),
-                    Text(StoneAvatar.labels[i],
+                    Text(StoneAvatar.allLabels[i],
                         style: TextStyle(
                           fontSize: 11,
                           color: _avatarId == i ? const Color(0xFF7B4F2E) : const Color(0xFF8B5E3C),
@@ -241,10 +254,18 @@ class _HomePageState extends State<HomePage>
                   ],
                 ),
               );
-            }),
+            }).toList(),
           ),
         ),
         actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ShopPage()))
+                  .then((_) => _init());
+            },
+            child: const Text('前往商店 🛒', style: TextStyle(color: Color(0xFF7B4F2E), fontWeight: FontWeight.bold)),
+          ),
           TextButton(onPressed: () => Navigator.pop(ctx),
               child: const Text('取消', style: TextStyle(color: Color(0xFFAA8866)))),
         ],
@@ -849,28 +870,40 @@ class _HomePageState extends State<HomePage>
             ),
           ),
 
-          // ── 右上角：金幣顯示 ──
+          // ── 右上角：金幣 + 商店 ──
           Positioned(
             top: _imgTop(size) + 14,
             right: _imgLeft(size) + 14,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEDD9A3).withOpacity(0.92),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFD4A056), width: 1.5),
-                boxShadow: [BoxShadow(color: Colors.brown.withOpacity(0.25), blurRadius: 6, offset: const Offset(0, 2))],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('🪙', style: TextStyle(fontSize: 16)),
-                  const SizedBox(width: 4),
-                  Text('$_coins',
-                      style: const TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF7B4F2E))),
-                ],
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // 金幣
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEDD9A3).withOpacity(0.92),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFD4A056), width: 1.5),
+                    boxShadow: [BoxShadow(color: Colors.brown.withOpacity(0.25), blurRadius: 6, offset: const Offset(0, 2))],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🪙', style: TextStyle(fontSize: 16)),
+                      const SizedBox(width: 4),
+                      Text('$_coins',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF7B4F2E))),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // 商店按鈕
+                _TopButton(
+                  icon: Icons.storefront,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShopPage()))
+                      .then((_) => _init()),
+                ),
+              ],
             ),
           ),
 
