@@ -29,7 +29,7 @@ class _LoginPageState extends State<LoginPage> {
       await FirebaseService.signInWithGoogle();
       _goHome();
     } catch (e) {
-      setState(() { _loading = false; _error = 'Google 登入失敗，請稍後再試' });
+      setState(() { _loading = false; _error = 'Google 登入失敗，請稍後再試'; });
     }
   }
 
