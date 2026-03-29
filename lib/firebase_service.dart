@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FirebaseService {
   static final _auth = FirebaseAuth.instance;
@@ -57,17 +58,14 @@ class FirebaseService {
     return snap.data();
   }
 
-  static Future<void> updateRockName(String name) async {
+  static Future<void> _updateUserField(String field, dynamic value) async {
     final id = uid;
     if (id == null) return;
-    await _db.collection('users').doc(id).set({'rockName': name}, SetOptions(merge: true));
+    await _db.collection('users').doc(id).set({field: value}, SetOptions(merge: true));
   }
 
-  static Future<void> updateAvatar(int avatarId) async {
-    final id = uid;
-    if (id == null) return;
-    await _db.collection('users').doc(id).set({'avatarId': avatarId}, SetOptions(merge: true));
-  }
+  static Future<void> updateRockName(String name) => _updateUserField('rockName', name);
+  static Future<void> updateAvatar(int avatarId) => _updateUserField('avatarId', avatarId);
 
   // ── 好友碼 ──────────────────────────────────────────
   static String _generateFriendCode() {
@@ -105,11 +103,11 @@ class FirebaseService {
   static Future<void> sendFriendRequest(String toUid) async {
     final id = uid;
     if (id == null || toUid == id) return;
-    final myData = await getUserData();
+    final prefs = await SharedPreferences.getInstance();
     await _db.collection('users').doc(toUid).collection('friendRequests').doc(id).set({
       'fromUid': id,
-      'rockName': myData?['rockName'] ?? '',
-      'avatarId': myData?['avatarId'] ?? 0,
+      'rockName': prefs.getString('rock_name') ?? '',
+      'avatarId': prefs.getInt('avatar_id') ?? 0,
       'sentAt': FieldValue.serverTimestamp(),
     });
   }
@@ -127,8 +125,10 @@ class FirebaseService {
     final id = uid;
     if (id == null) return;
     final now = FieldValue.serverTimestamp();
-    await _db.collection('users').doc(id).collection('friends').doc(fromUid).set({'addedAt': now});
-    await _db.collection('users').doc(fromUid).collection('friends').doc(id).set({'addedAt': now});
+    await Future.wait([
+      _db.collection('users').doc(id).collection('friends').doc(fromUid).set({'addedAt': now}),
+      _db.collection('users').doc(fromUid).collection('friends').doc(id).set({'addedAt': now}),
+    ]);
     await _db.collection('users').doc(id).collection('friendRequests').doc(fromUid).delete();
   }
 

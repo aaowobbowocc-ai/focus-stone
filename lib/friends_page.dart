@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'firebase_service.dart';
 import 'stone_avatar.dart';
+import 'study_history.dart';
 
 class FriendsPage extends StatefulWidget {
   const FriendsPage({super.key});
@@ -15,7 +16,6 @@ class _FriendsPageState extends State<FriendsPage> {
   List<Map<String, dynamic>> _friends = [];
   List<Map<String, dynamic>> _requests = [];
   bool _loading = true;
-  bool _isAnonymous = false;
 
   @override
   void initState() {
@@ -24,17 +24,17 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 
   Future<void> _load() async {
-    final results = await Future.wait([
-      FirebaseService.getMyFriendCode(),
-      FirebaseService.getFriends(),
-      FirebaseService.getPendingRequests(),
-    ]);
+    final codeFuture = FirebaseService.getMyFriendCode();
+    final friendsFuture = FirebaseService.getFriends();
+    final requestsFuture = FirebaseService.getPendingRequests();
+    final code = await codeFuture;
+    final friends = await friendsFuture;
+    final requests = await requestsFuture;
     if (mounted) {
       setState(() {
-        _myCode = (results[0] as String?) ?? '';
-        _friends = results[1] as List<Map<String, dynamic>>;
-        _requests = results[2] as List<Map<String, dynamic>>;
-        _isAnonymous = FirebaseService.isAnonymous;
+        _myCode = code ?? '';
+        _friends = friends;
+        _requests = requests;
         _loading = false;
       });
     }
@@ -234,7 +234,7 @@ class _FriendsPageState extends State<FriendsPage> {
                       const SizedBox(height: 12),
 
                       // 匿名用戶：綁定 Google 提示
-                      if (_isAnonymous)
+                      if (FirebaseService.isAnonymous)
                         GestureDetector(
                           onTap: _linkGoogle,
                           child: Container(
@@ -522,14 +522,6 @@ class _FriendHistorySheet extends StatelessWidget {
 
   const _FriendHistorySheet({required this.friendName, required this.avatarId, required this.sessions});
 
-  String _formatDuration(int seconds) {
-    final h = seconds ~/ 3600;
-    final m = (seconds % 3600) ~/ 60;
-    final s = seconds % 60;
-    if (h > 0) return '${h}時${m}分';
-    if (m > 0) return '${m}分${s}秒';
-    return '${s}秒';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -586,7 +578,7 @@ class _FriendHistorySheet extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Text(_formatDuration(secs),
+                      Text(formatStudyDuration(secs),
                           style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold,
                               color: failed ? const Color(0xFFB03030) : const Color(0xFF4A2C0A))),
                     ],

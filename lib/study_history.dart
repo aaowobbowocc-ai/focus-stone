@@ -32,6 +32,15 @@ class StudySession {
   }
 }
 
+String formatStudyDuration(int seconds) {
+  final h = seconds ~/ 3600;
+  final m = (seconds % 3600) ~/ 60;
+  final s = seconds % 60;
+  if (h > 0) return '${h}時${m}分';
+  if (m > 0) return '${m}分${s}秒';
+  return '${s}秒';
+}
+
 class StudyHistory {
   static const _key = 'study_sessions';
 

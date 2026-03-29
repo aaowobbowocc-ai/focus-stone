@@ -71,15 +71,6 @@ class _HistoryPageState extends State<HistoryPage> {
     _load();
   }
 
-  String _formatDuration(int seconds) {
-    final h = seconds ~/ 3600;
-    final m = (seconds % 3600) ~/ 60;
-    final s = seconds % 60;
-    if (h > 0) return '${h}時${m}分${s}秒';
-    if (m > 0) return '${m}分${s}秒';
-    return '${s}秒';
-  }
-
   int get _totalSeconds =>
       _sessions.fold(0, (sum, s) => sum + s.durationSeconds);
 
@@ -160,7 +151,6 @@ class _HistoryPageState extends State<HistoryPage> {
                             child: _SummaryCard(
                               totalSessions: _sessions.length,
                               totalSeconds: _totalSeconds,
-                              formatDuration: _formatDuration,
                             ),
                           ),
                           // 清單
@@ -251,7 +241,7 @@ class _HistoryPageState extends State<HistoryPage> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Text(
-                                            _formatDuration(s.durationSeconds),
+                                            formatStudyDuration(s.durationSeconds),
                                             style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.bold,
@@ -284,12 +274,10 @@ class _HistoryPageState extends State<HistoryPage> {
 class _SummaryCard extends StatelessWidget {
   final int totalSessions;
   final int totalSeconds;
-  final String Function(int) formatDuration;
 
   const _SummaryCard({
     required this.totalSessions,
     required this.totalSeconds,
-    required this.formatDuration,
   });
 
   @override
@@ -311,7 +299,7 @@ class _SummaryCard extends StatelessWidget {
         children: [
           _Stat(label: '讀書次數', value: '$totalSessions 次'),
           Container(width: 1, height: 36, color: Colors.white30),
-          _Stat(label: '累計時長', value: formatDuration(totalSeconds)),
+          _Stat(label: '累計時長', value: formatStudyDuration(totalSeconds)),
         ],
       ),
     );
