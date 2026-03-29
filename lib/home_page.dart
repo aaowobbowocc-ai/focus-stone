@@ -37,10 +37,11 @@ class _HomePageState extends State<HomePage>
   String _currentQuote = '點我看看會發生什麼事。';
   final Random _random = Random();
 
-  // ── 石頭名字 & 頭像 & 連續天數 ──
+  // ── 石頭名字 & 頭像 & 連續天數 & 金幣 ──
   String _rockName = '';
   int _avatarId = 0;
   int _streak = 0;
+  int _coins = 0;
 
   // ── 讀書計時 ──
   bool _isStudying = false;
@@ -111,11 +112,13 @@ class _HomePageState extends State<HomePage>
     await prefs.setInt('last_opened', DateTime.now().millisecondsSinceEpoch);
     final savedName = prefs.getString('rock_name') ?? '';
     final savedAvatar = prefs.getInt('avatar_id') ?? 0;
+    final savedCoins = prefs.getInt('total_coins') ?? 0;
     if (!mounted) return;
 
     setState(() {
       _rockName = savedName;
       _avatarId = savedAvatar;
+      _coins = savedCoins;
     });
 
     // 第一次啟動：提示命名
@@ -243,6 +246,17 @@ class _HomePageState extends State<HomePage>
     await prefs.setInt('avatar_id', picked);
     if (mounted) setState(() => _avatarId = picked);
     await FirebaseService.updateAvatar(picked);
+  }
+
+  Future<int> _earnCoins(int studySeconds) async {
+    final earned = studySeconds ~/ 60;
+    if (earned <= 0) return 0;
+    final prefs = await SharedPreferences.getInstance();
+    final newTotal = (_coins + earned);
+    await prefs.setInt('total_coins', newTotal);
+    if (mounted) setState(() => _coins = newTotal);
+    FirebaseService.updateCoins(newTotal);
+    return earned;
   }
 
   void _scheduleMidStudyMessage() {
@@ -500,19 +514,19 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  void _stopStudy() {
+  Future<void> _stopStudy() async {
     _studyTimer?.cancel();
     _stopReadingAnimations();
     final secs = _studySeconds;
-    // goalNotReached: 有設定目標但本次未達成（包含「繼續讀書」後 _goalMinutes 被歸零的情況不算）
     final goalNotReached = _goalMinutes > 0 && !_goalReached && secs < _goalMinutes * 60;
     final now = DateTime.now();
     StudyHistory.save(StudySession(date: now, durationSeconds: secs, name: _sessionName));
     FirebaseService.syncSession(date: now, durationSeconds: secs, failed: false, name: _sessionName);
+    final earned = await _earnCoins(secs);
     final endQuote = getStudyEndQuote(seconds: secs, goalNotReached: goalNotReached);
+    if (!mounted) return;
     setState(() {
       _isStudying = false;
-
       _currentQuote = endQuote;
     });
     _showBubble();
@@ -541,6 +555,23 @@ class _HomePageState extends State<HomePage>
               goalNotReached ? '目標 $_goalMinutes 分鐘未達成' : '讀書時長',
               style: const TextStyle(color: Colors.grey),
             ),
+            if (earned > 0) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF8E1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFFD54F)),
+                ),
+                child: Text('🪙 獲得 $earned 金幣！',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        color: Color(0xFFE65100),
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold)),
+              ),
+            ],
             const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -579,16 +610,17 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  void _failStudy() {
+  Future<void> _failStudy() async {
     _studyTimer?.cancel();
     _stopReadingAnimations();
     final secs = _studySeconds;
     final now = DateTime.now();
     StudyHistory.save(StudySession(date: now, durationSeconds: secs, failed: true, name: _sessionName));
     FirebaseService.syncSession(date: now, durationSeconds: secs, failed: true, name: _sessionName);
+    await _earnCoins(secs);
+    if (!mounted) return;
     setState(() {
       _isStudying = false;
-
       _currentQuote = getPenaltyQuote();
     });
     _showBubble();
@@ -805,6 +837,31 @@ class _HomePageState extends State<HomePage>
                   ],
                 ),
               ],
+            ),
+          ),
+
+          // ── 右上角：金幣顯示 ──
+          Positioned(
+            top: _imgTop(size) + 14,
+            right: _imgLeft(size) + 14,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEDD9A3).withOpacity(0.92),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFD4A056), width: 1.5),
+                boxShadow: [BoxShadow(color: Colors.brown.withOpacity(0.25), blurRadius: 6, offset: const Offset(0, 2))],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('🪙', style: TextStyle(fontSize: 16)),
+                  const SizedBox(width: 4),
+                  Text('$_coins',
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF7B4F2E))),
+                ],
+              ),
             ),
           ),
 

@@ -66,6 +66,7 @@ class FirebaseService {
 
   static Future<void> updateRockName(String name) => _updateUserField('rockName', name);
   static Future<void> updateAvatar(int avatarId) => _updateUserField('avatarId', avatarId);
+  static Future<void> updateCoins(int coins) => _updateUserField('coins', coins);
 
   // ── 好友碼 ──────────────────────────────────────────
   static String _generateFriendCode() {
