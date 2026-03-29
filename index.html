@@ -33,34 +33,6 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
-  <!-- Firebase -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyChKg3BlsgsLPo7OlYC4D3JlnrDmMPzygU",
-      authDomain: "focusstone-38201.firebaseapp.com",
-      projectId: "focusstone-38201",
-      storageBucket: "focusstone-38201.firebasestorage.app",
-      messagingSenderId: "999739666866",
-      appId: "1:999739666866:web:d8d1b61a4cff90ecf934ab",
-      measurementId: "G-XRVD37ZDRP"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    window.firebaseApp = app;
-  </script>
-
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
