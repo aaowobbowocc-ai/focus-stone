@@ -13,6 +13,7 @@ class _FriendsPageState extends State<FriendsPage> {
   String _myCode = '';
   List<Map<String, dynamic>> _friends = [];
   bool _loading = true;
+  bool _isAnonymous = false;
 
   @override
   void initState() {
@@ -27,9 +28,24 @@ class _FriendsPageState extends State<FriendsPage> {
       setState(() {
         _myCode = code ?? '';
         _friends = friends;
+        _isAnonymous = FirebaseService.isAnonymous;
         _loading = false;
       });
     }
+  }
+
+  Future<void> _linkGoogle() async {
+    setState(() => _loading = true);
+    try {
+      await FirebaseService.linkWithGoogle();
+      _showSnack('已成功綁定 Google 帳號！資料已保留 🎉');
+    } catch (e) {
+      final msg = e.toString().contains('credential-already-in-use')
+          ? '此 Google 帳號已被其他用戶使用'
+          : '綁定失敗，請稍後再試';
+      _showSnack(msg);
+    }
+    _load();
   }
 
   Future<void> _addFriend() async {
@@ -198,6 +214,40 @@ class _FriendsPageState extends State<FriendsPage> {
                     children: [
                       // 我的邀請碼卡片
                       _MyCodeCard(code: _myCode),
+                      const SizedBox(height: 12),
+
+                      // 匿名用戶：綁定 Google 提示
+                      if (_isAnonymous)
+                        GestureDetector(
+                          onTap: _linkGoogle,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEDD9A3),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: const Color(0xFFAA8866)),
+                            ),
+                            child: const Row(
+                              children: [
+                                Text('G', style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF4285F4))),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('綁定 Google 帳號',
+                                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
+                                      Text('換裝置也能保留所有紀錄與好友',
+                                          style: TextStyle(fontSize: 11, color: Color(0xFF8B5E3C))),
+                                    ],
+                                  ),
+                                ),
+                                Icon(Icons.chevron_right, color: Color(0xFFAA8866), size: 20),
+                              ],
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 16),
 
                       // 好友清單

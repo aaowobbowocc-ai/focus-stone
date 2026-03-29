@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'home_page.dart';
+import 'login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const PetRockApp());
+  final hasUser = FirebaseAuth.instance.currentUser != null;
+  runApp(PetRockApp(showLogin: !hasUser));
 }
 
 class PetRockApp extends StatelessWidget {
-  const PetRockApp({super.key});
+  final bool showLogin;
+  const PetRockApp({super.key, required this.showLogin});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +25,7 @@ class PetRockApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.grey),
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      home: showLogin ? const LoginPage() : const HomePage(),
     );
   }
 }

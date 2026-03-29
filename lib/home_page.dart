@@ -111,9 +111,6 @@ class _HomePageState extends State<HomePage>
 
     setState(() => _rockName = savedName);
 
-    // Firebase 匿名登入
-    await FirebaseService.signInAnonymously();
-
     // 第一次啟動：提示命名
     if (savedName.isEmpty) {
       await _renameRock(isFirstTime: true);

@@ -10,10 +10,26 @@ class FirebaseService {
   static User? get currentUser => _auth.currentUser;
   static String? get uid => _auth.currentUser?.uid;
 
+  static bool get isAnonymous => _auth.currentUser?.isAnonymous ?? true;
+
   /// 匿名登入（首次使用自動建立帳號）
   static Future<void> signInAnonymously() async {
     if (_auth.currentUser != null) return;
     await _auth.signInAnonymously();
+  }
+
+  /// Google 登入（Web）
+  static Future<void> signInWithGoogle() async {
+    final provider = GoogleAuthProvider();
+    await _auth.signInWithPopup(provider);
+  }
+
+  /// 匿名帳號綁定 Google（保留所有資料）
+  static Future<void> linkWithGoogle() async {
+    final user = _auth.currentUser;
+    if (user == null || !user.isAnonymous) return;
+    final provider = GoogleAuthProvider();
+    await user.linkWithPopup(provider);
   }
 
   // ── 用戶資料 ────────────────────────────────────────
