@@ -9,6 +9,7 @@ import 'study_history.dart';
 import 'history_page.dart';
 import 'friends_page.dart';
 import 'shop_page.dart';
+import 'changelog_page.dart';
 import 'firebase_service.dart';
 import 'stone_avatar.dart';
 
@@ -181,14 +182,17 @@ class _HomePageState extends State<HomePage>
         child: Center(
           child: Material(
             color: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF7B4F2E),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [BoxShadow(color: Colors.brown.withOpacity(0.35), blurRadius: 10, offset: const Offset(0, 4))],
+            child: GestureDetector(
+              onTap: () => ChangelogPage.show(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF7B4F2E),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [BoxShadow(color: Colors.brown.withOpacity(0.35), blurRadius: 10, offset: const Offset(0, 4))],
+                ),
+                child: const Text('✨ 小石頭已悄悄進化，點我查看', style: TextStyle(color: Colors.white, fontSize: 14)),
               ),
-              child: const Text('✨ 小石頭已悄悄進化', style: TextStyle(color: Colors.white, fontSize: 14)),
             ),
           ),
         ),
@@ -897,7 +901,7 @@ class _HomePageState extends State<HomePage>
                   ],
                 ),
                 const SizedBox(height: 10),
-                // 日曆 + 好友按鈕
+                // 日曆 + 好友 + 更新日誌按鈕
                 Row(
                   children: [
                     _TopButton(
@@ -908,6 +912,11 @@ class _HomePageState extends State<HomePage>
                     _TopButton(
                       icon: Icons.people,
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FriendsPage())),
+                    ),
+                    const SizedBox(width: 10),
+                    _TopButton(
+                      icon: Icons.new_releases_outlined,
+                      onTap: () => ChangelogPage.show(context),
                     ),
                   ],
                 ),
