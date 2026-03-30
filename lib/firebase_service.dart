@@ -227,6 +227,39 @@ class FirebaseService {
     });
   }
 
+  /// 推薦好友：取得尚未加入的其他用戶（最多 5 位）
+  static Future<List<Map<String, dynamic>>> getRecommendedUsers() async {
+    final id = uid;
+    if (id == null) return [];
+    // 取得已是好友的 UID 集合
+    final friends = await getFriends();
+    final friendUids = friends.map((f) => f['uid'] as String).toSet();
+    // 取得待確認邀請的 UID 集合
+    final requests = await getPendingRequests();
+    final requestUids = requests.map((r) => r['uid'] as String).toSet();
+    // 撈最近加入的用戶（抓 30 筆後 client 過濾）
+    final snap = await _db
+        .collection('users')
+        .orderBy('createdAt', descending: true)
+        .limit(30)
+        .get();
+    final result = <Map<String, dynamic>>[];
+    for (final doc in snap.docs) {
+      if (doc.id == id) continue;
+      if (friendUids.contains(doc.id)) continue;
+      if (requestUids.contains(doc.id)) continue;
+      final data = doc.data();
+      result.add({
+        'uid': doc.id,
+        'rockName': data['rockName'] ?? '無名石頭',
+        'avatarId': data['avatarId'] ?? 0,
+        'friendCode': data['friendCode'] ?? '',
+      });
+      if (result.length >= 5) break;
+    }
+    return result;
+  }
+
   /// 取得某用戶最近 N 筆紀錄
   static Future<List<Map<String, dynamic>>> getFriendSessions(
       String friendUid, {int limit = 20}) async {

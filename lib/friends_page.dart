@@ -16,6 +16,7 @@ class _FriendsPageState extends State<FriendsPage> {
   List<Map<String, dynamic>> _friends = [];
   List<Map<String, dynamic>> _requests = [];
   List<Map<String, dynamic>> _leaderboard = [];
+  List<Map<String, dynamic>> _recommended = [];
   bool _loading = true;
 
   @override
@@ -38,9 +39,11 @@ class _FriendsPageState extends State<FriendsPage> {
         _requests = (results[2] as List).cast<Map<String, dynamic>>();
         _loading = false;
       });
-      // 好友載入完成後再載入排行榜（依賴好友清單）
+      // 好友載入完成後並行載入排行榜與推薦好友
       final lb = await FirebaseService.getLeaderboardData();
       if (mounted) setState(() => _leaderboard = lb);
+      final rec = await FirebaseService.getRecommendedUsers();
+      if (mounted) setState(() => _recommended = rec);
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
@@ -145,6 +148,39 @@ class _FriendsPageState extends State<FriendsPage> {
     if (confirm != true) return;
     await FirebaseService.sendFriendRequest(user['uid'] as String);
     _showSnack('好友邀請已送出，等待 ${user['rockName']} 確認 🪨');
+  }
+
+  Future<void> _sendRequestToUser(Map<String, dynamic> user) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: const Color(0xFFF5E6C8),
+        title: const Text('發送好友邀請？', textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
+        content: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            StoneAvatar(id: (user['avatarId'] as int? ?? 0).clamp(0, StoneAvatar.totalCount - 1), size: 36),
+            const SizedBox(width: 10),
+            Text(user['rockName'] ?? '無名石頭',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF7B4F2E))),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('取消', style: TextStyle(color: Color(0xFFAA8866)))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('送出！', style: TextStyle(color: Color(0xFF7B4F2E), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    await FirebaseService.sendFriendRequest(user['uid'] as String);
+    _showSnack('好友邀請已送出 🪨');
+    setState(() => _recommended.removeWhere((u) => u['uid'] == user['uid']));
   }
 
   Future<void> _acceptRequest(Map<String, dynamic> req) async {
@@ -359,6 +395,18 @@ class _FriendsPageState extends State<FriendsPage> {
                           },
                         )),
                       ],
+
+                      // 推薦好友
+                      if (_recommended.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        const Text('推薦好友',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF8B5E3C))),
+                        const SizedBox(height: 8),
+                        ..._recommended.map((u) => _RecommendCard(
+                          user: u,
+                          onAdd: () => _sendRequestToUser(u),
+                        )),
+                      ],
                     ],
                   ),
           ),
@@ -527,6 +575,55 @@ class _FriendCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── 推薦好友卡片 ────────────────────────────────────────
+class _RecommendCard extends StatelessWidget {
+  final Map<String, dynamic> user;
+  final VoidCallback onAdd;
+  const _RecommendCard({required this.user, required this.onAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    final avatarId = (user['avatarId'] as int? ?? 0).clamp(0, StoneAvatar.totalCount - 1);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEDD9A3),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF8B5E3C).withOpacity(0.5), width: 1.2),
+      ),
+      child: Row(
+        children: [
+          StoneAvatar(id: avatarId, size: 44),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(user['rockName'] ?? '無名石頭',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
+                const Text('也在用 FocusStone',
+                    style: TextStyle(fontSize: 11, color: Color(0xFFAA8866))),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: onAdd,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFF7B4F2E),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text('加好友', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
       ),
     );
   }
