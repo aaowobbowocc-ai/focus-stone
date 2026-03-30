@@ -25,6 +25,35 @@
   <link rel="manifest" href="manifest.json">
 
   <script>
+    // iOS PWA 版本檢查：每次啟動都從網路確認 version.json
+    // 若版本變更，清除所有 SW 與快取後強制重新載入
+    (async function () {
+      try {
+        const res = await fetch('version.json?_=' + Date.now(), { cache: 'no-store' });
+        const data = await res.json();
+        const newVer = String(data.v);
+        const key = 'focus_stone_ver';
+        const stored = localStorage.getItem(key);
+        if (stored && stored !== newVer) {
+          // 有新版本：先取消所有 SW，再清快取，再重新載入
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map(function (r) { return r.unregister(); }));
+          }
+          if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(function (k) { return caches.delete(k); }));
+          }
+          localStorage.setItem(key, newVer);
+          location.reload(true);
+          return;
+        }
+        localStorage.setItem(key, newVer);
+      } catch (e) { /* 離線時靜默忽略 */ }
+    })();
+  </script>
+
+  <script>
     // 監聽 Service Worker 更新，通知 Flutter 層
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('controllerchange', function () {

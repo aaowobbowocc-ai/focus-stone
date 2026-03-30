@@ -1,3 +1,8 @@
+# 0. 更新 version.json（讓 iOS PWA 偵測到新版本並自動重新載入）
+$version = Get-Date -Format "yyyyMMddHHmmss"
+"{`"v`":`"$version`"}" | Set-Content -Path "web\version.json" -Encoding UTF8
+Write-Host "--- Version: $version ---" -ForegroundColor Magenta
+
 # 1. 開始編譯
 Write-Host "--- Start Compiling Web ---" -ForegroundColor Cyan
 flutter build web --release --base-href "/focus-stone/"
