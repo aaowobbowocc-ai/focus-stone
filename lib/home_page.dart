@@ -894,27 +894,21 @@ class _HomePageState extends State<HomePage>
                   ],
                 ),
                 const SizedBox(height: 10),
-                // 日曆（橫）；好友 + 更新日誌（直）
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _TopButton(
                       icon: Icons.calendar_month,
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryPage())),
                     ),
-                    const SizedBox(width: 10),
-                    Column(
-                      children: [
-                        _TopButton(
-                          icon: Icons.people,
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FriendsPage())),
-                        ),
-                        const SizedBox(height: 8),
-                        _TopButton(
-                          icon: Icons.new_releases_outlined,
-                          onTap: () => ChangelogPage.show(context),
-                        ),
-                      ],
+                    const SizedBox(width: 8),
+                    _TopButton(
+                      icon: Icons.people,
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FriendsPage())),
+                    ),
+                    const SizedBox(width: 8),
+                    _TopButton(
+                      icon: Icons.new_releases_outlined,
+                      onTap: () => ChangelogPage.show(context),
                     ),
                   ],
                 ),
