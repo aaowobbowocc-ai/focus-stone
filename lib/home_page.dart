@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'quotes.dart';
@@ -161,6 +162,37 @@ class _HomePageState extends State<HomePage>
           hour: now.hour,
         ));
     _showBubble();
+
+    // 偵測 iOS PWA 版本更新：若剛剛 reload 過，顯示右上角通知
+    final flag = html.window.localStorage['focus_stone_just_updated'];
+    if (flag == '1') {
+      html.window.localStorage.remove('focus_stone_just_updated');
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showUpdateBadge());
+    }
+  }
+
+  void _showUpdateBadge() {
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (_) => Positioned(
+        top: MediaQuery.of(context).padding.top + 62,
+        right: 16,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF7B4F2E),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [BoxShadow(color: Colors.brown.withOpacity(0.35), blurRadius: 8, offset: const Offset(0, 3))],
+            ),
+            child: const Text('✨ 小石頭已悄悄進化', style: TextStyle(color: Colors.white, fontSize: 13)),
+          ),
+        ),
+      ),
+    );
+    Overlay.of(context).insert(entry);
+    Future.delayed(const Duration(seconds: 3), () => entry.remove());
   }
 
   // 從商店/其他頁面返回時，只更新金幣和已擁有造型，不重新問名字

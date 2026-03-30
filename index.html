@@ -45,6 +45,7 @@
             await Promise.all(keys.map(function (k) { return caches.delete(k); }));
           }
           localStorage.setItem(key, newVer);
+          localStorage.setItem('focus_stone_just_updated', '1');
           location.reload(true);
           return;
         }
