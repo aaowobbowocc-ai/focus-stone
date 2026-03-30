@@ -128,11 +128,6 @@ class _HomePageState extends State<HomePage>
       _ownedAvatars = savedOwned;
     });
 
-    // 第一次啟動：提示命名
-    if (savedName.isEmpty) {
-      await _renameRock(isFirstTime: true);
-    }
-
     // 計算連續讀書天數
     final allSessions = await StudyHistory.load();
     if (mounted) setState(() => _streak = calculateStreak(allSessions));
@@ -275,7 +270,7 @@ class _HomePageState extends State<HomePage>
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(ctx);
+              Navigator.pop(ctx);   
               Navigator.push(context, MaterialPageRoute(builder: (_) => const ShopPage()))
                   .then((_) => _refreshShopData());
             },
