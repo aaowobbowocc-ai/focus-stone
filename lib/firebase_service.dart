@@ -237,10 +237,9 @@ class FirebaseService {
     // 取得待確認邀請的 UID 集合
     final requests = await getPendingRequests();
     final requestUids = requests.map((r) => r['uid'] as String).toSet();
-    // 撈最近加入的用戶（抓 30 筆後 client 過濾）
+    // 撈用戶（不依賴 createdAt，避免舊帳號被過濾掉）
     final snap = await _db
         .collection('users')
-        .orderBy('createdAt', descending: true)
         .limit(30)
         .get();
     final result = <Map<String, dynamic>>[];
