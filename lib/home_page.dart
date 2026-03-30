@@ -175,18 +175,21 @@ class _HomePageState extends State<HomePage>
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (_) => Positioned(
-        top: MediaQuery.of(context).padding.top + 62,
-        right: 16,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF7B4F2E),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: Colors.brown.withOpacity(0.35), blurRadius: 8, offset: const Offset(0, 3))],
+        top: MediaQuery.of(context).padding.top + 70,
+        left: 0,
+        right: 0,
+        child: Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF7B4F2E),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [BoxShadow(color: Colors.brown.withOpacity(0.35), blurRadius: 10, offset: const Offset(0, 4))],
+              ),
+              child: const Text('✨ 小石頭已悄悄進化', style: TextStyle(color: Colors.white, fontSize: 14)),
             ),
-            child: const Text('✨ 小石頭已悄悄進化', style: TextStyle(color: Colors.white, fontSize: 13)),
           ),
         ),
       ),
