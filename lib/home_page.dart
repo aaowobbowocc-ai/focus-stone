@@ -376,7 +376,7 @@ class _HomePageState extends State<HomePage>
     if (!_isStudying) return;
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
-      _graceTimer ??= Timer(const Duration(seconds: 15), () {
+      _graceTimer ??= Timer(const Duration(minutes: 90), () {
         if (_isStudying && mounted) _failStudy();
       });
     }
@@ -881,42 +881,40 @@ class _HomePageState extends State<HomePage>
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: const Color(0xFF8B5E3C), width: 1.5),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _rockName.isEmpty ? '我的小石頭' : _rockName,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF4A2C0A),
-                              ),
-                            ),
-                            const SizedBox(width: 3),
-                            const Icon(Icons.edit, size: 11, color: Color(0xFF8B5E3C)),
-                          ],
+                        child: Text(
+                          _rockName.isEmpty ? '我的小石頭' : _rockName,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF4A2C0A),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
-                // 日曆 + 好友 + 更新日誌按鈕
+                // 日曆（橫）；好友 + 更新日誌（直）
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _TopButton(
                       icon: Icons.calendar_month,
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryPage())),
                     ),
                     const SizedBox(width: 10),
-                    _TopButton(
-                      icon: Icons.people,
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FriendsPage())),
-                    ),
-                    const SizedBox(width: 10),
-                    _TopButton(
-                      icon: Icons.new_releases_outlined,
-                      onTap: () => ChangelogPage.show(context),
+                    Column(
+                      children: [
+                        _TopButton(
+                          icon: Icons.people,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FriendsPage())),
+                        ),
+                        const SizedBox(height: 8),
+                        _TopButton(
+                          icon: Icons.new_releases_outlined,
+                          onTap: () => ChangelogPage.show(context),
+                        ),
+                      ],
                     ),
                   ],
                 ),
