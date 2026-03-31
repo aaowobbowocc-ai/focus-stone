@@ -50,6 +50,9 @@ class _HomePageState extends State<HomePage>
   int _coins = 0;
   List<int> _ownedAvatars = List.generate(StoneAvatar.count, (i) => i);
 
+  // ── 選單 ──
+  bool _menuOpen = false;
+
   // ── 讀書計時 ──
   bool _isStudying = false;
   int _studySeconds = 0;
@@ -865,37 +868,44 @@ class _HomePageState extends State<HomePage>
             ),
           ),
 
-          // ── 左上角：頭像 + 石頭名 + 日曆/好友按鈕 ──
+          // ── 頂部列：頭像+名字+選單鍵  左；金幣  右 ──
           Positioned(
             top: _imgTop(size) + 14,
             left: _imgLeft(size) + 14,
+            right: _imgLeft(size) + 14,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 頭像 + 名字橫排
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Column(
-                      children: [
-                        GestureDetector(
-                          onTap: _pickAvatar,
-                          child: StoneAvatar(id: _avatarId, size: 52, selected: true),
-                        ),
-                        if (_streak > 0)
-                          Container(
-                            margin: const EdgeInsets.only(top: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF8C00),
-                              borderRadius: BorderRadius.circular(8),
+                    // 頭像
+                    GestureDetector(
+                      onTap: _pickAvatar,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          StoneAvatar(id: _avatarId, size: 44, selected: true),
+                          if (_streak > 0)
+                            Positioned(
+                              bottom: -6, left: 0, right: 0,
+                              child: Center(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF8C00),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text('🔥$_streak',
+                                      style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                                ),
+                              ),
                             ),
-                            child: Text('🔥 $_streak天',
-                                style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                     const SizedBox(width: 8),
+                    // 石頭名字
                     GestureDetector(
                       onTap: () => _renameRock(),
                       child: Container(
@@ -907,77 +917,87 @@ class _HomePageState extends State<HomePage>
                         ),
                         child: Text(
                           _rockName.isEmpty ? '我的小石頭' : _rockName,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF4A2C0A),
-                          ),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A)),
                         ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    // 選單切換按鈕
+                    GestureDetector(
+                      onTap: () => setState(() => _menuOpen = !_menuOpen),
+                      child: AnimatedRotation(
+                        turns: _menuOpen ? 0.125 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Container(
+                          width: 32, height: 32,
+                          decoration: BoxDecoration(
+                            color: _menuOpen
+                                ? const Color(0xFF7B4F2E).withOpacity(0.85)
+                                : const Color(0xFFEDD9A3).withOpacity(0.85),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFF8B5E3C), width: 1.2),
+                          ),
+                          child: Icon(Icons.menu,
+                              size: 18,
+                              color: _menuOpen ? Colors.white : const Color(0xFF4A2C0A)),
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    // 金幣
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEDD9A3).withOpacity(0.92),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFD4A056), width: 1.5),
+                        boxShadow: [BoxShadow(color: Colors.brown.withOpacity(0.25), blurRadius: 6, offset: const Offset(0, 2))],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('🪙', style: TextStyle(fontSize: 15)),
+                          const SizedBox(width: 4),
+                          Text('$_coins',
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF7B4F2E))),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    _TopButton(
-                      icon: Icons.calendar_month,
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryPage())),
-                    ),
-                    const SizedBox(width: 8),
-                    _TopButton(
-                      icon: Icons.people,
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FriendsPage())),
-                    ),
-                    const SizedBox(width: 8),
-                    _TopButton(
-                      icon: Icons.new_releases_outlined,
-                      onTap: () => ChangelogPage.show(context),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // ── 右上角：金幣 + 商店 ──
-          Positioned(
-            top: _imgTop(size) + 14,
-            right: _imgLeft(size) + 14,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // 金幣
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEDD9A3).withOpacity(0.92),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFD4A056), width: 1.5),
-                    boxShadow: [BoxShadow(color: Colors.brown.withOpacity(0.25), blurRadius: 6, offset: const Offset(0, 2))],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('🪙', style: TextStyle(fontSize: 16)),
-                      const SizedBox(width: 4),
-                      Text('$_coins',
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF7B4F2E))),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // 商店按鈕
-                _TopButton(
-                  icon: Icons.storefront,
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShopPage()))
-                      .then((_) => _refreshShopData()),
-                ),
-                const SizedBox(height: 8),
-                // 教學 & 回饋
-                _TopButton(
-                  icon: Icons.help_outline,
-                  onTap: () => HelpPage.show(context),
+                // ── 隱藏選單列 ──
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeInOut,
+                  child: _menuOpen
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Row(
+                            children: [
+                              _TopButton(icon: Icons.calendar_month,
+                                  onTap: () { setState(() => _menuOpen = false);
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryPage())); }),
+                              const SizedBox(width: 8),
+                              _TopButton(icon: Icons.people,
+                                  onTap: () { setState(() => _menuOpen = false);
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => const FriendsPage())); }),
+                              const SizedBox(width: 8),
+                              _TopButton(icon: Icons.storefront,
+                                  onTap: () { setState(() => _menuOpen = false);
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ShopPage()))
+                                        .then((_) => _refreshShopData()); }),
+                              const SizedBox(width: 8),
+                              _TopButton(icon: Icons.new_releases_outlined,
+                                  onTap: () { setState(() => _menuOpen = false);
+                                    ChangelogPage.show(context); }),
+                              const SizedBox(width: 8),
+                              _TopButton(icon: Icons.help_outline,
+                                  onTap: () { setState(() => _menuOpen = false);
+                                    HelpPage.show(context); }),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(),
                 ),
               ],
             ),
