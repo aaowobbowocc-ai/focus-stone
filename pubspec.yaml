@@ -40,3 +40,7 @@ flutter:
     - assets/stone_cool.png
     - assets/stone_flower.png
     - assets/stone_star.png
+    - assets/stone_angry.png
+    - assets/stone_cry.png
+    - assets/stone_blank.png
+    - assets/stone_king.png

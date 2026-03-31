@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-// ── 10 款 Q 版石頭頭像 ──────────────────────────────────
-// 圖片款 (0-5): 普通 開心 愛睏 帥氣 小花 閃星  ← AI 生成
-// 商店款 (6-9): 憤怒 酷炫 哭泣 王者           ← CustomPainter
+// ── 10 款 Q 版石頭頭像（全部 AI 生成圖片）──────────────
+// 免費 (0-5): 普通 開心 愛睏 帥氣 小花 閃星
+// 商店 (6-9): 憤怒 哭泣 發呆 王者
 
 class StoneAvatar extends StatelessWidget {
   final int id;
@@ -15,15 +15,14 @@ class StoneAvatar extends StatelessWidget {
   static const int count = 6;        // 免費款數量
   static const int totalCount = 10;  // 全部款數量
 
-  static const List<int> prices = [0, 0, 0, 0, 0, 0, 30, 50, 40, 80];
+  static const List<int> prices = [0, 0, 0, 0, 0, 0, 30, 40, 50, 80];
 
   static const List<String> allLabels = [
     '普通', '開心', '愛睏', '帥氣', '小花', '閃星',
-    '憤怒', '酷炫', '哭泣', '王者',
+    '憤怒', '哭泣', '發呆', '王者',
   ];
   static List<String> get labels => allLabels.sublist(0, count);
 
-  // id 0-5 對應圖片
   static const List<String?> imagePaths = [
     'assets/stone_normal.png',
     'assets/stone_happy.png',
@@ -31,7 +30,10 @@ class StoneAvatar extends StatelessWidget {
     'assets/stone_cool.png',
     'assets/stone_flower.png',
     'assets/stone_star.png',
-    null, null, null, null, // 6-9 用 CustomPainter
+    'assets/stone_angry.png',
+    'assets/stone_cry.png',
+    'assets/stone_blank.png',
+    'assets/stone_king.png',
   ];
 
   @override
@@ -52,12 +54,11 @@ class StoneAvatar extends StatelessWidget {
             : [],
       ),
       child: ClipOval(
-        child: imgPath != null
-            ? Image.asset(imgPath, width: size, height: size, fit: BoxFit.cover, errorBuilder: (_, __, ___) => CustomPaint(size: Size(size, size), painter: _StonePainter(safeId)),)
-            : CustomPaint(
-                size: Size(size, size),
-                painter: _StonePainter(safeId),
-              ),
+        child: Image.asset(
+          imgPath ?? 'assets/stone_normal.png',
+          width: size, height: size, fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => CustomPaint(size: Size(size, size), painter: _StonePainter(safeId)),
+        ),
       ),
     );
   }
