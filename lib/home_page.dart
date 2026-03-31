@@ -4,6 +4,7 @@ import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'push_service.dart';
+import 'help_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'quotes.dart';
 import 'messages.dart';
@@ -971,6 +972,12 @@ class _HomePageState extends State<HomePage>
                   icon: Icons.storefront,
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShopPage()))
                       .then((_) => _refreshShopData()),
+                ),
+                const SizedBox(height: 8),
+                // 教學 & 回饋
+                _TopButton(
+                  icon: Icons.help_outline,
+                  onTap: () => HelpPage.show(context),
                 ),
               ],
             ),
