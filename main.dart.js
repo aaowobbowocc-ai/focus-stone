@@ -29410,7 +29410,7 @@ case 3:n=A
 m="[FCM] Token: "
 l=A
 s=5
-return A.t(q.gO9().rv("YOUR_VAPID_KEY_HERE"),$async$QU)
+return A.t(q.gO9().rv("BG6s5OYjENQIj_OlPtzXXcrH8FNHjvZhAJGaV4zA2Z60yK-fIldZTjFxIm4fy5GwPCjfhcew5b7dubil9_m8a5M"),$async$QU)
 case 5:n.aOo(m+l.m(b))
 case 4:return A.z(null,r)}})
 return A.A($async$QU,r)},
