@@ -37,8 +37,6 @@ class _HomePageState extends State<HomePage>
   late Animation<double> _swayAnim;
   late AnimationController _jumpController;
   late Animation<double> _jumpAnim;
-  Timer? _graceTimer;
-
   // ── 台詞 ──
   String _currentQuote = '點我看看會發生什麼事。';
   final Random _random = Random();
@@ -56,6 +54,7 @@ class _HomePageState extends State<HomePage>
   // ── 讀書計時 ──
   bool _isStudying = false;
   int _studySeconds = 0;
+  DateTime? _studyStartTime;
   String _sessionName = '';
   int _goalMinutes = 0;
   bool _goalReached = false;  // 本次是否已達成目標
@@ -107,7 +106,6 @@ class _HomePageState extends State<HomePage>
     WidgetsBinding.instance.removeObserver(this);
     _studyTimer?.cancel();
     _bubbleTimer?.cancel();
-    _graceTimer?.cancel();
     _midStudyTimer?.cancel();
     _bubbleController.dispose();
     _rockController.dispose();
@@ -380,19 +378,10 @@ class _HomePageState extends State<HomePage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!_isStudying) return;
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.hidden) {
-      _graceTimer ??= Timer(const Duration(minutes: 90), () {
-        if (_isStudying && mounted) _failStudy();
-      });
-    }
-    if (state == AppLifecycleState.resumed) {
-      if (_graceTimer != null && mounted) {
-        setState(() => _currentQuote = getPenaltyQuote());
-        _showBubble();
-      }
-      _graceTimer?.cancel();
-      _graceTimer = null;
+    if (state == AppLifecycleState.resumed && _studyStartTime != null) {
+      // 用真實時間差更新秒數，修正背景節流造成的誤差
+      final elapsed = DateTime.now().difference(_studyStartTime!).inSeconds;
+      if (mounted) setState(() => _studySeconds = elapsed);
     }
   }
 
@@ -512,6 +501,7 @@ class _HomePageState extends State<HomePage>
     final name = nameCtrl.text.trim();
     final goal = int.tryParse(goalCtrl.text.trim()) ?? 0;
 
+    _studyStartTime = DateTime.now();
     setState(() {
       _isStudying = true;
       _studySeconds = 0;
@@ -523,10 +513,11 @@ class _HomePageState extends State<HomePage>
     _showBubble(autoFade: false);
     _startReadingAnimations();
     _studyTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() => _studySeconds++);
+      final elapsed = DateTime.now().difference(_studyStartTime!).inSeconds;
+      setState(() => _studySeconds = elapsed);
       if (_goalMinutes > 0 &&
           !_goalReached &&
-          _studySeconds == _goalMinutes * 60) {
+          _studySeconds >= _goalMinutes * 60) {
         _onGoalReached();
       }
     });
@@ -827,10 +818,10 @@ class _HomePageState extends State<HomePage>
             left: rockCX - rockR,
             top: rockCY - rockR - (_isStudying ? 20 : 0),
             width: rockD,
-            height: _isStudying ? rockD * 1.2 + 20 : rockD,
+            height: rockD,
             child: GestureDetector(
               onTap: _onRockTap,
-              onLongPress: PushService.requestPermission,
+              onLongPress: () => PushService.requestPermission(context),
               child: _isStudying
                   ? AnimatedBuilder(
                       animation: _swayController,
@@ -840,7 +831,7 @@ class _HomePageState extends State<HomePage>
                       ),
                       child: Image.asset(
                           _goalReached ? 'assets/flower.png' : 'assets/read.png',
-                          width: rockD, height: rockD * 1.2, fit: BoxFit.contain),
+                          width: rockD, height: rockD, fit: BoxFit.contain),
                     )
                   : AnimatedBuilder(
                       animation: _jumpController,
@@ -1059,7 +1050,7 @@ class _HomePageState extends State<HomePage>
           Center(
             child: GestureDetector(
               onTap: _onRockTap,
-              onLongPress: PushService.requestPermission,
+              onLongPress: () => PushService.requestPermission(context),
               child: _isStudying
                   ? AnimatedBuilder(
                       animation: _swayController,
@@ -1070,7 +1061,7 @@ class _HomePageState extends State<HomePage>
                       child: Image.asset(
                         _goalReached ? 'assets/flower.png' : 'assets/read.png',
                         width: rockD,
-                        height: rockD * 1.2,
+                        height: rockD,
                         fit: BoxFit.contain,
                       ),
                     )
