@@ -839,7 +839,8 @@ class _HomePageState extends State<HomePage>
                         offset: Offset(0, _jumpAnim.value),
                         child: ScaleTransition(scale: _rockScale, child: child),
                       ),
-                      child: Image.asset('assets/stone.png',
+                      child: Image.asset(
+                          StoneAvatar.imagePaths[_avatarId] ?? 'assets/stone.png',
                           width: rockD, height: rockD, fit: BoxFit.contain),
                     ),
             ),
@@ -1046,9 +1047,13 @@ class _HomePageState extends State<HomePage>
               ),
             ),
           ),
-          // 石頭居中
-          Center(
-            child: GestureDetector(
+          // 石頭坐在地毯上（偏下置中）
+          Positioned(
+            bottom: size.height * 0.12,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: GestureDetector(
               onTap: _onRockTap,
               onLongPress: () => PushService.requestPermission(context),
               child: _isStudying
@@ -1072,12 +1077,13 @@ class _HomePageState extends State<HomePage>
                         child: ScaleTransition(scale: _rockScale, child: child),
                       ),
                       child: Image.asset(
-                        'assets/stone.png',
+                        StoneAvatar.imagePaths[_avatarId] ?? 'assets/stone.png',
                         width: rockD,
                         height: rockD,
                         fit: BoxFit.contain,
                       ),
                     ),
+            ),
             ),
           ),
           // 計時器 — 書本頁碼風格，低調放底部

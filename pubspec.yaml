@@ -34,3 +34,9 @@ flutter:
     - assets/read.png
     - assets/background.jpg
     - assets/flower.png
+    - assets/stone_normal.png
+    - assets/stone_happy.png
+    - assets/stone_sleepy.png
+    - assets/stone_cool.png
+    - assets/stone_flower.png
+    - assets/stone_star.png

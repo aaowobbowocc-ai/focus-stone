@@ -2,8 +2,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 // ── 10 款 Q 版石頭頭像 ──────────────────────────────────
-// 免費 (0-4): 開心 帥氣 愛睏 閃亮 害羞
-// 商店 (5-9): 憤怒 酷炫 哭泣 發呆 王者
+// 圖片款 (0-5): 普通 開心 愛睏 帥氣 小花 閃星  ← AI 生成
+// 商店款 (6-9): 憤怒 酷炫 哭泣 王者           ← CustomPainter
 
 class StoneAvatar extends StatelessWidget {
   final int id;
@@ -12,20 +12,32 @@ class StoneAvatar extends StatelessWidget {
 
   const StoneAvatar({super.key, required this.id, this.size = 48, this.selected = false});
 
-  static const int count = 5;       // 免費款數量（向下相容）
-  static const int totalCount = 10; // 全部款數量
+  static const int count = 6;        // 免費款數量
+  static const int totalCount = 10;  // 全部款數量
 
-  static const List<int> prices = [0, 0, 0, 0, 0, 30, 50, 30, 40, 80];
+  static const List<int> prices = [0, 0, 0, 0, 0, 0, 30, 50, 40, 80];
 
-  static const List<String> labels = ['開心', '帥氣', '愛睏', '閃亮', '害羞'];
   static const List<String> allLabels = [
-    '開心', '帥氣', '愛睏', '閃亮', '害羞',
-    '憤怒', '酷炫', '哭泣', '發呆', '王者',
+    '普通', '開心', '愛睏', '帥氣', '小花', '閃星',
+    '憤怒', '酷炫', '哭泣', '王者',
+  ];
+  static List<String> get labels => allLabels.sublist(0, count);
+
+  // id 0-5 對應圖片
+  static const List<String?> imagePaths = [
+    'assets/stone_normal.png',
+    'assets/stone_happy.png',
+    'assets/stone_sleepy.png',
+    'assets/stone_cool.png',
+    'assets/stone_flower.png',
+    'assets/stone_star.png',
+    null, null, null, null, // 6-9 用 CustomPainter
   ];
 
   @override
   Widget build(BuildContext context) {
     final safeId = id.clamp(0, totalCount - 1);
+    final imgPath = imagePaths[safeId];
     return Container(
       width: size,
       height: size,
@@ -40,10 +52,12 @@ class StoneAvatar extends StatelessWidget {
             : [],
       ),
       child: ClipOval(
-        child: CustomPaint(
-          size: Size(size, size),
-          painter: _StonePainter(safeId),
-        ),
+        child: imgPath != null
+            ? Image.asset(imgPath, width: size, height: size, fit: BoxFit.cover, errorBuilder: (_, __, ___) => CustomPaint(size: Size(size, size), painter: _StonePainter(safeId)),)
+            : CustomPaint(
+                size: Size(size, size),
+                painter: _StonePainter(safeId),
+              ),
       ),
     );
   }
