@@ -95,16 +95,20 @@ class _StonePainter extends CustomPainter {
     final bodyR = w * 0.38;
     final bodyCenter = Offset(cx, cy + h * 0.04);
 
-    // 陰影
-    canvas.drawOval(
-      Rect.fromCenter(center: bodyCenter + Offset(w * 0.02, h * 0.03), width: bodyR * 2.1, height: bodyR * 1.95),
+    // 陰影（有機石頭形狀）
+    canvas.drawPath(
+      _roughOval(bodyCenter + Offset(w * 0.022, h * 0.032), bodyR * 1.05, bodyR * 0.975, id),
       Paint()..color = shadowColor,
     );
-    // 本體
-    canvas.drawOval(
-      Rect.fromCenter(center: bodyCenter, width: bodyR * 2.1, height: bodyR * 1.95),
+    // 本體（有機石頭形狀）
+    canvas.drawPath(
+      _roughOval(bodyCenter, bodyR * 1.05, bodyR * 0.975, id),
       Paint()..color = bodyColor,
     );
+    // 紙張顆粒感
+    _grain(canvas, bodyCenter, bodyR, id);
+    // 鉛筆輪廓線
+    _pencilOutline(canvas, bodyCenter, bodyR * 1.055, bodyR * 0.98, shadowColor, id);
     // 高光
     canvas.drawOval(
       Rect.fromCenter(
@@ -112,7 +116,7 @@ class _StonePainter extends CustomPainter {
         width: bodyR * 0.55,
         height: bodyR * 0.38,
       ),
-      Paint()..color = Colors.white.withOpacity(0.25),
+      Paint()..color = Colors.white.withOpacity(0.22),
     );
 
     switch (id) {
@@ -397,6 +401,63 @@ class _StonePainter extends CustomPainter {
       ..moveTo(bc.dx - w * 0.09, bc.dy + w * 0.10)
       ..cubicTo(bc.dx - w * 0.02, bc.dy + w * 0.16, bc.dx + w * 0.06, bc.dy + w * 0.16, bc.dx + w * 0.12, bc.dy + w * 0.11);
     canvas.drawPath(smilePath, Paint()..color = const Color(0xFF3A1A0A)..style = PaintingStyle.stroke..strokeWidth = w * 0.04..strokeCap = StrokeCap.round);
+  }
+
+  // ── 有機橢圓（仿手繪石頭輪廓）────────────────────────────
+  // 用 Catmull-Rom 插值 + 以 id 為 seed 的微擾，讓每顆石頭形狀略有不同
+  Path _roughOval(Offset c, double rx, double ry, int seed) {
+    const n = 10;
+    final pts = List.generate(n, (i) {
+      final a = i / n * math.pi * 2;
+      final j = rx * 0.038 * math.sin(seed * 1.37 + i * 2.31);
+      return Offset(
+        c.dx + (rx + j) * math.cos(a),
+        c.dy + (ry + j * 0.72) * math.sin(a),
+      );
+    });
+    final path = Path();
+    for (int i = 0; i < n; i++) {
+      final p0 = pts[(i - 1 + n) % n];
+      final p1 = pts[i];
+      final p2 = pts[(i + 1) % n];
+      final p3 = pts[(i + 2) % n];
+      if (i == 0) path.moveTo(p1.dx, p1.dy);
+      path.cubicTo(
+        p1.dx + (p2.dx - p0.dx) / 6, p1.dy + (p2.dy - p0.dy) / 6,
+        p2.dx - (p3.dx - p1.dx) / 6, p2.dy - (p3.dy - p1.dy) / 6,
+        p2.dx, p2.dy,
+      );
+    }
+    path.close();
+    return path;
+  }
+
+  // ── 紙張顆粒感 ────────────────────────────────────────────
+  void _grain(Canvas canvas, Offset c, double r, int seed) {
+    final p = Paint()..color = const Color(0xFF000000).withOpacity(0.032);
+    const count = 22;
+    for (int i = 0; i < count; i++) {
+      final a = i * 2.399 + seed * 0.87;
+      final dist = r * 0.82 * math.sqrt((i + 0.5) / count);
+      final dx = dist * math.cos(a);
+      final dy = dist * math.sin(a) * 0.93;
+      final dotR = 0.65 + 0.45 * math.sin(i * 1.5 + seed * 0.6);
+      canvas.drawCircle(Offset(c.dx + dx, c.dy + dy), dotR, p);
+    }
+  }
+
+  // ── 鉛筆感輪廓線 ──────────────────────────────────────────
+  void _pencilOutline(Canvas canvas, Offset c, double rx, double ry, Color color, int seed) {
+    for (int stroke = 0; stroke < 2; stroke++) {
+      final off = Offset(stroke * 0.35, stroke * 0.25);
+      final path = _roughOval(c + off, rx + stroke * 0.25, ry + stroke * 0.18, seed + stroke * 47);
+      canvas.drawPath(path, Paint()
+        ..color = color.withOpacity(0.32 - stroke * 0.10)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0 + stroke * 0.3
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round);
+    }
   }
 
   @override
