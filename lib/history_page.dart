@@ -157,7 +157,7 @@ class _HistoryPageState extends State<HistoryPage> {
           children: [
             Text('📚', style: TextStyle(fontSize: 48)),
             SizedBox(height: 12),
-            Text('還沒有讀書紀錄\n快去開始讀書吧！',
+            Text('還沒有紀錄呢\n慢慢累積吧',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, color: Color(0xFF7B4F2E), height: 1.6)),
           ],
@@ -251,7 +251,7 @@ class _HistoryPageState extends State<HistoryPage> {
                                 color: s.failed ? const Color(0xFFB03030) : const Color(0xFF4A2C0A)),
                           ),
                           if (s.failed)
-                            const Text('中途離開',
+                            const Text('今天沒完成',
                                 style: TextStyle(fontSize: 11, color: Color(0xFFB03030))),
                         ],
                       ),
@@ -278,7 +278,7 @@ class _HistoryPageState extends State<HistoryPage> {
         // 連續天數卡片
         Row(
           children: [
-            Expanded(child: _StreakCard(icon: '🔥', label: '目前連續', value: '$streak 天')),
+            Expanded(child: _StreakCard(icon: '🔥', label: '連續讀書中', value: '$streak 天')),
             const SizedBox(width: 12),
             Expanded(child: _StreakCard(icon: '🏆', label: '最長連續', value: '$longest 天')),
           ],

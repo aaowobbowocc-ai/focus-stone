@@ -49,7 +49,7 @@ class _ChangelogSheet extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(height: 12),
-          const Text('更新日誌',
+          const Text('石頭的故事',
               style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
@@ -58,7 +58,7 @@ class _ChangelogSheet extends StatelessWidget {
           if (entries.isEmpty)
             const Expanded(
               child: Center(
-                child: Text('暫無資料', style: TextStyle(color: Color(0xFF8B5E3C))),
+                child: Text('還沒有故事呢', style: TextStyle(color: Color(0xFF8B5E3C))),
               ),
             )
           else

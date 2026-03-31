@@ -226,7 +226,7 @@ class _HomePageState extends State<HomePage>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: const Color(0xFFF5E6C8),
         title: Text(
-          isFirstTime ? '幫你的石頭取個名字吧 🪨' : '改個名字？',
+          isFirstTime ? '石頭想要個名字' : '改個名字？',
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A)),
         ),
@@ -277,7 +277,7 @@ class _HomePageState extends State<HomePage>
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: const Color(0xFFF5E6C8),
-        title: const Text('選擇頭像', textAlign: TextAlign.center,
+        title: const Text('選一個喜歡的吧', textAlign: TextAlign.center,
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
         content: SizedBox(
           width: 280,

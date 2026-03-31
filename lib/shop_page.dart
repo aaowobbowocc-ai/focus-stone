@@ -42,7 +42,7 @@ class _ShopPageState extends State<ShopPage> {
     if (_owned.contains(id)) return;
 
     if (_coins < price) {
-      _showSnack('金幣不足！還差 ${price - _coins} 枚 🪙');
+      _showSnack('金幣不夠呢。還差 ${price - _coins} 枚');
       return;
     }
 
@@ -51,7 +51,7 @@ class _ShopPageState extends State<ShopPage> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: const Color(0xFFF5E6C8),
-        title: const Text('確認購買', textAlign: TextAlign.center,
+        title: const Text('要買這個嗎', textAlign: TextAlign.center,
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -97,7 +97,7 @@ class _ShopPageState extends State<ShopPage> {
         _coins = newCoins;
         _owned = newOwned;
       });
-      _showSnack('${StoneAvatar.allLabels[id]} 解鎖成功！🎉');
+      _showSnack('${StoneAvatar.allLabels[id]} 現身了呢');
     }
   }
 
@@ -130,7 +130,7 @@ class _ShopPageState extends State<ShopPage> {
                     icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                   ),
                   const Expanded(
-                    child: Text('石頭商店', textAlign: TextAlign.center,
+                    child: Text('石頭的小家', textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   ),
                   // 金幣顯示
@@ -159,12 +159,12 @@ class _ShopPageState extends State<ShopPage> {
                     padding: const EdgeInsets.all(16),
                     children: [
                       // 免費款標題
-                      _SectionHeader(title: '免費款', subtitle: '帳號建立即擁有'),
+                      _SectionHeader(title: '初始石頭', subtitle: '帳號建立即擁有'),
                       const SizedBox(height: 10),
                       _buildGrid(0, StoneAvatar.count),
                       const SizedBox(height: 20),
                       // 商店款標題
-                      _SectionHeader(title: '商店款', subtitle: '用金幣解鎖'),
+                      _SectionHeader(title: '特別的石頭', subtitle: '用金幣解鎖'),
                       const SizedBox(height: 10),
                       _buildGrid(StoneAvatar.count, StoneAvatar.totalCount),
                     ],
@@ -271,10 +271,10 @@ class _AvatarCard extends StatelessWidget {
                   color: const Color(0xFF7B4F2E).withOpacity(0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text('已擁有', style: TextStyle(fontSize: 11, color: Color(0xFF7B4F2E), fontWeight: FontWeight.bold)),
+                child: const Text('你的石頭', style: TextStyle(fontSize: 11, color: Color(0xFF7B4F2E), fontWeight: FontWeight.bold)),
               )
             else if (isFree)
-              const Text('免費', style: TextStyle(fontSize: 11, color: Color(0xFF4CAF50), fontWeight: FontWeight.bold))
+              const Text('獲得', style: TextStyle(fontSize: 11, color: Color(0xFF4CAF50), fontWeight: FontWeight.bold))
             else
               GestureDetector(
                 onTap: onBuy,

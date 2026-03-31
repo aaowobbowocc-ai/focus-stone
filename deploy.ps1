@@ -6,6 +6,7 @@ Write-Host "--- Version: $version ---" -ForegroundColor Magenta
 # 1. 開始編譯
 Write-Host "--- Start Compiling Web ---" -ForegroundColor Cyan
 flutter build web --release --base-href "/focus-stone/"
+if ($LASTEXITCODE -ne 0) { Write-Host "Build failed!" -ForegroundColor Red; exit 1 }
 
 # 2. 將 build/web 複製回 git 追蹤的根目錄
 Write-Host "--- Copying built files to repo root ---" -ForegroundColor Cyan
@@ -15,11 +16,29 @@ Get-ChildItem -Path $src | ForEach-Object {
     Copy-Item -Path $_.FullName -Destination $dst -Recurse -Force
 }
 
-# 3. Git 上傳
+# 3. Git commit
 Write-Host "--- Uploading to GitHub ---" -ForegroundColor Yellow
 git add -A
-$commitMsg = "Update_Stone_" + (Get-Date -Format 'yyyyMMdd_HHmm')
+$commitMsg = "Deploy_$version"
 git commit -m $commitMsg
-git push -u origin main -f
 
-Write-Host "--- Done! Check your iPhone in 1 min ---" -ForegroundColor Green
+# 4. 打版本 tag（保留最近 5 個，舊的自動刪除）
+$tagName = "v$version"
+git tag $tagName
+Write-Host "--- Tagged: $tagName ---" -ForegroundColor Magenta
+
+$allTags = git tag --sort=-creatordate | Where-Object { $_ -match "^v\d{14}$" }
+if ($allTags.Count -gt 5) {
+    $oldTags = $allTags | Select-Object -Skip 5
+    foreach ($old in $oldTags) {
+        git tag -d $old | Out-Null
+        Write-Host "  Removed old tag: $old" -ForegroundColor DarkGray
+    }
+}
+
+# 5. Push（含 tags）
+git push -u origin main -f
+git push origin --tags --force
+
+Write-Host "--- Done! Version: $version ---" -ForegroundColor Green
+Write-Host "  To rollback, run: .\rollback.ps1" -ForegroundColor DarkCyan

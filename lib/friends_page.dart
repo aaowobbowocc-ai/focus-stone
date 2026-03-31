@@ -47,7 +47,7 @@ class _FriendsPageState extends State<FriendsPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        _showSnack('載入失敗，請稍後再試');
+        _showSnack('載入不順呢，稍後再試試。');
       }
     }
   }
@@ -59,12 +59,12 @@ class _FriendsPageState extends State<FriendsPage> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: const Color(0xFFF5E6C8),
-        title: const Text('加入好友', textAlign: TextAlign.center,
+        title: const Text('認識新朋友', textAlign: TextAlign.center,
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('輸入好友的 6 位邀請碼',
+            const Text('輸入朋友的邀請碼',
                 style: TextStyle(fontSize: 13, color: Color(0xFF8B5E3C))),
             const SizedBox(height: 10),
             TextField(
@@ -102,7 +102,7 @@ class _FriendsPageState extends State<FriendsPage> {
     );
     if (code == null || code.length != 6) return;
     if (code == _myCode) {
-      _showSnack('不能加自己為好友 😅');
+      _showSnack('自己不能加呢。');
       return;
     }
 
@@ -116,7 +116,7 @@ class _FriendsPageState extends State<FriendsPage> {
     // 檢查是否已是好友
     final alreadyFriend = _friends.any((f) => f['uid'] == user['uid']);
     if (alreadyFriend) {
-      _showSnack('你們已經是好友了 🪨');
+      _showSnack('已經是朋友了呢。');
       return;
     }
 
@@ -125,7 +125,7 @@ class _FriendsPageState extends State<FriendsPage> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: const Color(0xFFF5E6C8),
-        title: const Text('發送好友邀請？', textAlign: TextAlign.center,
+        title: const Text('邀請這位朋友？', textAlign: TextAlign.center,
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
         content: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -147,7 +147,7 @@ class _FriendsPageState extends State<FriendsPage> {
     );
     if (confirm != true) return;
     await FirebaseService.sendFriendRequest(user['uid'] as String);
-    _showSnack('好友邀請已送出，等待 ${user['rockName']} 確認 🪨');
+    _showSnack('邀請已送出。等著 ${user['rockName']} 確認呢。');
   }
 
   Future<void> _sendRequestToUser(Map<String, dynamic> user) async {
@@ -156,7 +156,7 @@ class _FriendsPageState extends State<FriendsPage> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: const Color(0xFFF5E6C8),
-        title: const Text('發送好友邀請？', textAlign: TextAlign.center,
+        title: const Text('邀請這位朋友？', textAlign: TextAlign.center,
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
         content: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -179,19 +179,19 @@ class _FriendsPageState extends State<FriendsPage> {
     );
     if (confirm != true) return;
     await FirebaseService.sendFriendRequest(user['uid'] as String);
-    _showSnack('好友邀請已送出 🪨');
+    _showSnack('邀請已送出呢。');
     setState(() => _recommended.removeWhere((u) => u['uid'] == user['uid']));
   }
 
   Future<void> _acceptRequest(Map<String, dynamic> req) async {
     await FirebaseService.acceptFriendRequest(req['uid'] as String);
-    _showSnack('已接受 ${req['rockName']} 的好友邀請 🎉');
+    _showSnack('${req['rockName']} 成為朋友了呢。');
     _load();
   }
 
   Future<void> _rejectRequest(Map<String, dynamic> req) async {
     await FirebaseService.rejectFriendRequest(req['uid'] as String);
-    _showSnack('已拒絕邀請');
+    _showSnack('拒絕了邀請呢。');
     _load();
   }
 
@@ -254,7 +254,7 @@ class _FriendsPageState extends State<FriendsPage> {
                     icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                   ),
                   const Expanded(
-                    child: Text('好友石頭圈', textAlign: TextAlign.center,
+                    child: Text('石頭朋友們', textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   ),
                   IconButton(
@@ -357,7 +357,7 @@ class _FriendsPageState extends State<FriendsPage> {
                               children: [
                                 Text('🪨', style: TextStyle(fontSize: 48)),
                                 SizedBox(height: 12),
-                                Text('還沒有好友\n點右上角輸入邀請碼吧！',
+                                Text('還沒有朋友呢\n邀請碼在右上角',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(fontSize: 15, color: Color(0xFF8B5E3C), height: 1.6)),
                               ],
@@ -377,8 +377,8 @@ class _FriendsPageState extends State<FriendsPage> {
                               builder: (ctx) => AlertDialog(
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                 backgroundColor: const Color(0xFFF5E6C8),
-                                title: const Text('刪除好友？', style: TextStyle(color: Color(0xFF4A2C0A))),
-                                content: const Text('雙方都會移除好友關係',
+                                title: const Text('解除朋友關係？', style: TextStyle(color: Color(0xFF4A2C0A))),
+                                content: const Text('雙方都會移除呢',
                                     style: TextStyle(fontSize: 13, color: Color(0xFF8B5E3C))),
                                 actions: [
                                   TextButton(onPressed: () => Navigator.pop(ctx, false),
@@ -446,7 +446,7 @@ class _MyCodeCard extends StatelessWidget {
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: code));
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('邀請碼已複製！'), backgroundColor: Color(0xFF7B4F2E)),
+                    const SnackBar(content: Text('邀請碼複製了呢。'), backgroundColor: Color(0xFF7B4F2E)),
                   );
                 },
                 child: const Icon(Icons.copy, color: Colors.white54, size: 20),
@@ -490,7 +490,7 @@ class _RequestCard extends StatelessWidget {
               children: [
                 Text(request['rockName'] ?? '無名石頭',
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
-                const Text('想加你為好友',
+                const Text('想跟你做朋友呢',
                     style: TextStyle(fontSize: 11, color: Color(0xFFAA7722))),
               ],
             ),
@@ -561,7 +561,7 @@ class _FriendCard extends StatelessWidget {
                 children: [
                   Text(friend['rockName'] ?? '無名石頭',
                       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
-                  const Text('點擊查看讀書紀錄',
+                  const Text('看看他讀了什麼呢',
                       style: TextStyle(fontSize: 11, color: Color(0xFFAA8866))),
                 ],
               ),
@@ -607,7 +607,7 @@ class _RecommendCard extends StatelessWidget {
               children: [
                 Text(user['rockName'] ?? '無名石頭',
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
-                const Text('也在用 FocusStone',
+                const Text('也在這裡讀書呢',
                     style: TextStyle(fontSize: 11, color: Color(0xFFAA8866))),
               ],
             ),
