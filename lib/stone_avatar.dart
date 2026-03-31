@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-// ── 10 款 Q 版石頭頭像（全部 AI 生成圖片）──────────────
-// 免費 (0-5): 普通 開心 愛睏 帥氣 小花 閃星
-// 商店 (6-9): 憤怒 哭泣 發呆 王者
+// ── 11 款 Q 版石頭頭像（全部 AI 生成圖片）──────────────
+// 免費 (0-5): 灰色 開心 愛睏 帥氣 小花 閃星
+// 商店 (6-10): 彩色 憤怒 哭泣 發呆 王者
 
 class StoneAvatar extends StatelessWidget {
   final int id;
@@ -13,13 +13,13 @@ class StoneAvatar extends StatelessWidget {
   const StoneAvatar({super.key, required this.id, this.size = 48, this.selected = false});
 
   static const int count = 6;        // 免費款數量
-  static const int totalCount = 10;  // 全部款數量
+  static const int totalCount = 11;  // 全部款數量
 
-  static const List<int> prices = [0, 0, 0, 0, 0, 0, 30, 40, 50, 80];
+  static const List<int> prices = [0, 0, 0, 0, 0, 0, 20, 30, 40, 50, 80];
 
   static const List<String> allLabels = [
-    '普通', '開心', '愛睏', '帥氣', '小花', '閃星',
-    '憤怒', '哭泣', '發呆', '王者',
+    '灰石', '開心', '愛睏', '帥氣', '小花', '閃星',
+    '彩色', '憤怒', '哭泣', '發呆', '王者',
   ];
   static List<String> get labels => allLabels.sublist(0, count);
 
@@ -30,6 +30,7 @@ class StoneAvatar extends StatelessWidget {
     'assets/stone_cool.png',
     'assets/stone_flower.png',
     'assets/stone_star.png',
+    'assets/stone_color.png',
     'assets/stone_angry.png',
     'assets/stone_cry.png',
     'assets/stone_blank.png',
