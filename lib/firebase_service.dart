@@ -166,6 +166,49 @@ class FirebaseService {
     await _db.collection('users').doc(friendUid).collection('friends').doc(id).delete();
   }
 
+  // ── 今日讀書比較 ─────────────────────────────────────────
+  static Future<int> _getTodaySeconds(String userId) async {
+    try {
+      final now = DateTime.now();
+      final todayStart = DateTime(now.year, now.month, now.day);
+      final snap = await _db
+          .collection('users')
+          .doc(userId)
+          .collection('sessions')
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart))
+          .get();
+      return snap.docs.fold<int>(0, (sum, d) => sum + ((d.data()['duration'] as int?) ?? 0));
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// 回傳自己 + 好友今日讀書秒數，含 uid / rockName / avatarId / todaySeconds / isSelf
+  static Future<List<Map<String, dynamic>>> getTodayComparisonData() async {
+    final id = uid;
+    if (id == null) return [];
+
+    final selfDataFuture = getUserData();
+    final friendsFuture = getFriends();
+    final selfData = await selfDataFuture;
+    final friends = await friendsFuture;
+
+    final allEntries = <Map<String, dynamic>>[
+      {'uid': id, 'rockName': selfData?['rockName'] ?? '我', 'avatarId': (selfData?['avatarId'] as int?) ?? 0, 'isSelf': true},
+      for (final f in friends)
+        {'uid': f['uid'], 'rockName': f['rockName'] ?? '無名石頭', 'avatarId': (f['avatarId'] as int?) ?? 0, 'isSelf': false},
+    ];
+
+    final todayList = await Future.wait(
+      allEntries.map((e) => _getTodaySeconds(e['uid'] as String)),
+    );
+
+    return [
+      for (int i = 0; i < allEntries.length; i++)
+        {...allEntries[i], 'todaySeconds': todayList[i]},
+    ]..sort((a, b) => (b['todaySeconds'] as int).compareTo(a['todaySeconds'] as int));
+  }
+
   // ── 好友排行榜 ──────────────────────────────────────────
   static Future<int> _getWeeklySeconds(String userId, DateTime weekStart) async {
     try {

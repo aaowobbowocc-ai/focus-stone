@@ -17,6 +17,7 @@ class _FriendsPageState extends State<FriendsPage> {
   List<Map<String, dynamic>> _requests = [];
   List<Map<String, dynamic>> _leaderboard = [];
   List<Map<String, dynamic>> _recommended = [];
+  List<Map<String, dynamic>> _todayComparison = [];
   bool _loading = true;
 
   @override
@@ -42,6 +43,8 @@ class _FriendsPageState extends State<FriendsPage> {
       // 好友載入完成後並行載入排行榜與推薦好友
       final lb = await FirebaseService.getLeaderboardData();
       if (mounted) setState(() => _leaderboard = lb);
+      final today = await FirebaseService.getTodayComparisonData();
+      if (mounted) setState(() => _todayComparison = today);
       final rec = await FirebaseService.getRecommendedUsers();
       if (mounted) setState(() => _recommended = rec);
     } catch (e) {
@@ -277,6 +280,15 @@ class _FriendsPageState extends State<FriendsPage> {
                       // 我的邀請碼卡片
                       _MyCodeCard(code: _myCode),
                       const SizedBox(height: 12),
+
+                      // 今日讀書比較
+                      if (_todayComparison.isNotEmpty) ...[
+                        const Text('今天讀了多久',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF8B5E3C))),
+                        const SizedBox(height: 8),
+                        _TodayComparisonCard(entries: _todayComparison),
+                        const SizedBox(height: 12),
+                      ],
 
                       // 本週排行榜
                       if (_leaderboard.isNotEmpty) ...[
@@ -625,6 +637,108 @@ class _RecommendCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── 今日讀書比較 ────────────────────────────────────────
+class _TodayComparisonCard extends StatelessWidget {
+  final List<Map<String, dynamic>> entries;
+  const _TodayComparisonCard({required this.entries});
+
+  @override
+  Widget build(BuildContext context) {
+    final maxSecs = entries.fold<int>(1, (m, e) => (e['todaySeconds'] as int) > m ? (e['todaySeconds'] as int) : m);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEDD9A3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF8B5E3C), width: 1.5),
+        boxShadow: [BoxShadow(color: Colors.brown.withOpacity(0.12), blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: Column(
+        children: [
+          for (int i = 0; i < entries.length; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
+            _TodayBar(entry: entries[i], maxSecs: maxSecs),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TodayBar extends StatelessWidget {
+  final Map<String, dynamic> entry;
+  final int maxSecs;
+  const _TodayBar({required this.entry, required this.maxSecs});
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelf = entry['isSelf'] as bool? ?? false;
+    final avatarId = (entry['avatarId'] as int? ?? 0).clamp(0, StoneAvatar.totalCount - 1);
+    final name = entry['rockName'] as String? ?? '無名石頭';
+    final secs = entry['todaySeconds'] as int? ?? 0;
+    final ratio = maxSecs > 0 ? secs / maxSecs : 0.0;
+
+    return Row(
+      children: [
+        StoneAvatar(id: avatarId, size: 30),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 60,
+          child: Text(
+            isSelf ? '我' : name,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isSelf ? FontWeight.bold : FontWeight.normal,
+              color: const Color(0xFF4A2C0A),
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Stack(
+            children: [
+              Container(
+                height: 14,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF7B4F2E).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(7),
+                ),
+              ),
+              FractionallySizedBox(
+                widthFactor: ratio.clamp(0.0, 1.0),
+                child: Container(
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: isSelf
+                        ? const Color(0xFF7B4F2E)
+                        : const Color(0xFFB07040),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 42,
+          child: Text(
+            secs > 0 ? formatStudyDuration(secs) : '—',
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: secs > 0 ? const Color(0xFF7B4F2E) : const Color(0xFFAA8866),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
