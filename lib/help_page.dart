@@ -130,7 +130,7 @@ class _HelpSheet extends StatelessWidget {
                         label: '寫信給開發者',
                         onTap: () {
                           html.window.open(
-                              'mailto:dev@focusstone.app?subject=讀書石頭意見回饋',
+                              'mailto:aaowobbowocc@gmail.com?subject=讀書石頭意見回饋',
                               '_blank');
                         },
                       ),
