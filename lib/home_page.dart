@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'push_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'quotes.dart';
 import 'messages.dart';
@@ -766,9 +768,21 @@ class _HomePageState extends State<HomePage>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final topPad = MediaQuery.of(context).padding.top;
-    final botPad = MediaQuery.of(context).padding.bottom;
+    return OrientationBuilder(
+      builder: (context, orientation) {
+        final isLandscape = orientation == Orientation.landscape;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (isLandscape) {
+            SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+          } else {
+            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+          }
+        });
+        if (isLandscape) return _buildLandscape(context);
+
+        final size = MediaQuery.of(context).size;
+        final topPad = MediaQuery.of(context).padding.top;
+        final botPad = MediaQuery.of(context).padding.bottom;
 
     // 石頭坐在地毯上（背景圖地毯約在 h*0.80）
     final rockD = (size.width * 0.42).clamp(120.0, 170.0);
@@ -784,14 +798,22 @@ class _HomePageState extends State<HomePage>
     return Scaffold(
       body: Stack(
         children: [
-          // ── 背景圖 ──
+          // ── 背景圖（低飽和治癒色調）──
           Positioned.fill(
             child: Container(
               color: const Color(0xFF7A3B1E),
-              child: Image.asset(
-                'assets/background.jpg',
-                fit: BoxFit.contain,
-                alignment: Alignment.center,
+              child: ColorFiltered(
+                colorFilter: const ColorFilter.matrix([
+                  0.7638, 0.2146, 0.0217, 0, 8,
+                  0.0638, 0.9146, 0.0217, 0, 0,
+                  0.0638, 0.2146, 0.7217, 0, -5,
+                  0,      0,      0,      1, 0,
+                ]),
+                child: Image.asset(
+                  'assets/background.jpg',
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
+                ),
               ),
             ),
           ),
@@ -804,6 +826,7 @@ class _HomePageState extends State<HomePage>
             height: _isStudying ? rockD * 1.2 + 20 : rockD,
             child: GestureDetector(
               onTap: _onRockTap,
+              onLongPress: PushService.requestPermission,
               child: _isStudying
                   ? AnimatedBuilder(
                       animation: _swayController,
@@ -963,6 +986,101 @@ class _HomePageState extends State<HomePage>
                 : _StudyStartButton(onStart: _startStudy),
           ),
 
+        ],
+      ),
+    );
+      },
+    );
+  }
+
+  Widget _buildLandscape(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final rockD = (size.height * 0.55).clamp(120.0, 220.0);
+    return Scaffold(
+      backgroundColor: const Color(0xFF3B2010),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // 背景 — 鋪滿橫屏，低飽和治癒色調
+          ColorFiltered(
+            colorFilter: const ColorFilter.matrix([
+              0.7638, 0.2146, 0.0217, 0, 8,
+              0.0638, 0.9146, 0.0217, 0, 0,
+              0.0638, 0.2146, 0.7217, 0, -5,
+              0,      0,      0,      1, 0,
+            ]),
+            child: Image.asset(
+              'assets/background.jpg',
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+            ),
+          ),
+          // 四角暈影，增加沉浸感
+          Container(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.center,
+                radius: 1.2,
+                colors: [
+                  Colors.transparent,
+                  const Color(0xFF3B2010).withOpacity(0.35),
+                ],
+              ),
+            ),
+          ),
+          // 石頭居中
+          Center(
+            child: GestureDetector(
+              onTap: _onRockTap,
+              onLongPress: PushService.requestPermission,
+              child: _isStudying
+                  ? AnimatedBuilder(
+                      animation: _swayController,
+                      builder: (ctx, child) => Transform.rotate(
+                        angle: _swayAnim.value,
+                        child: child,
+                      ),
+                      child: Image.asset(
+                        _goalReached ? 'assets/flower.png' : 'assets/read.png',
+                        width: rockD,
+                        height: rockD * 1.2,
+                        fit: BoxFit.contain,
+                      ),
+                    )
+                  : AnimatedBuilder(
+                      animation: _jumpController,
+                      builder: (ctx, child) => Transform.translate(
+                        offset: Offset(0, _jumpAnim.value),
+                        child: ScaleTransition(scale: _rockScale, child: child),
+                      ),
+                      child: Image.asset(
+                        'assets/stone.png',
+                        width: rockD,
+                        height: rockD,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+            ),
+          ),
+          // 計時器 — 書本頁碼風格，低調放底部
+          if (_isStudying)
+            Positioned(
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Text(
+                  _timerDisplay,
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: const Color(0xFFEDD9A3).withOpacity(0.55),
+                    letterSpacing: 6,
+                    fontWeight: FontWeight.w300,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -55,6 +55,14 @@
   </script>
 
   <script>
+    // 註冊 Firebase Cloud Messaging Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('firebase-messaging-sw.js')
+        .catch(function(e) { console.warn('[FCM SW]', e); });
+    }
+  </script>
+
+  <script>
     // 監聽 Service Worker 更新，通知 Flutter 層
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('controllerchange', function () {
