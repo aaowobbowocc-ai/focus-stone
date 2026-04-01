@@ -37,7 +37,11 @@ if ($allTags.Count -gt 5) {
 }
 
 # 5. Push（含 tags）
-git push -u origin main -f
+git push origin main
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Push failed! Retrying..." -ForegroundColor Red
+    git push origin main --force
+}
 git push origin --tags --force
 
 Write-Host "--- Done! Version: $version ---" -ForegroundColor Green

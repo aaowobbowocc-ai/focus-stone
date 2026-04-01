@@ -806,7 +806,7 @@ class _HomePageState extends State<HomePage>
                 ]),
                 child: Image.asset(
                   'assets/background.jpg',
-                  fit: BoxFit.contain,
+                  fit: BoxFit.cover,
                   alignment: Alignment.center,
                 ),
               ),
@@ -829,9 +829,21 @@ class _HomePageState extends State<HomePage>
                         angle: _swayAnim.value,
                         child: child,
                       ),
-                      child: Image.asset(
-                          _goalReached ? 'assets/flower.png' : 'assets/read.png',
-                          width: rockD, height: rockD, fit: BoxFit.contain),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Image.asset(
+                            StoneAvatar.imagePaths[_avatarId] ?? 'assets/stone.png',
+                            width: rockD, height: rockD, fit: BoxFit.contain),
+                          Positioned(
+                            bottom: -4, right: -4,
+                            child: Text(
+                              _goalReached ? '🌸' : '📖',
+                              style: TextStyle(fontSize: rockD * 0.28),
+                            ),
+                          ),
+                        ],
+                      ),
                     )
                   : AnimatedBuilder(
                       animation: _jumpController,
@@ -1029,7 +1041,7 @@ class _HomePageState extends State<HomePage>
               0,      0,      0,      1, 0,
             ]),
             child: Image.asset(
-              'assets/background.jpg',
+              'assets/background_landscape.jpg',
               fit: BoxFit.cover,
               alignment: Alignment.center,
             ),
@@ -1047,43 +1059,50 @@ class _HomePageState extends State<HomePage>
               ),
             ),
           ),
-          // 石頭坐在地毯上（偏下置中）
+          // 石頭坐在地毯上（橫屏：置中偏下，對應背景地毯位置）
           Positioned(
-            bottom: size.height * 0.12,
-            left: 0,
-            right: 0,
+            bottom: size.height * 0.08,
+            left: size.width * 0.35,
+            right: size.width * 0.35,
             child: Center(
               child: GestureDetector(
-              onTap: _onRockTap,
-              onLongPress: () => PushService.requestPermission(context),
-              child: _isStudying
-                  ? AnimatedBuilder(
-                      animation: _swayController,
-                      builder: (ctx, child) => Transform.rotate(
-                        angle: _swayAnim.value,
-                        child: child,
+                onTap: _onRockTap,
+                onLongPress: () => PushService.requestPermission(context),
+                child: _isStudying
+                    ? AnimatedBuilder(
+                        animation: _swayController,
+                        builder: (ctx, child) => Transform.rotate(
+                          angle: _swayAnim.value,
+                          child: child,
+                        ),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Image.asset(
+                              StoneAvatar.imagePaths[_avatarId] ?? 'assets/stone.png',
+                              width: rockD, height: rockD, fit: BoxFit.contain),
+                            Positioned(
+                              bottom: -4, right: -4,
+                              child: Text(
+                                _goalReached ? '🌸' : '📖',
+                                style: TextStyle(fontSize: rockD * 0.28),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : AnimatedBuilder(
+                        animation: _jumpController,
+                        builder: (ctx, child) => Transform.translate(
+                          offset: Offset(0, _jumpAnim.value),
+                          child: ScaleTransition(scale: _rockScale, child: child),
+                        ),
+                        child: Image.asset(
+                          StoneAvatar.imagePaths[_avatarId] ?? 'assets/stone.png',
+                          width: rockD, height: rockD, fit: BoxFit.contain,
+                        ),
                       ),
-                      child: Image.asset(
-                        _goalReached ? 'assets/flower.png' : 'assets/read.png',
-                        width: rockD,
-                        height: rockD,
-                        fit: BoxFit.contain,
-                      ),
-                    )
-                  : AnimatedBuilder(
-                      animation: _jumpController,
-                      builder: (ctx, child) => Transform.translate(
-                        offset: Offset(0, _jumpAnim.value),
-                        child: ScaleTransition(scale: _rockScale, child: child),
-                      ),
-                      child: Image.asset(
-                        StoneAvatar.imagePaths[_avatarId] ?? 'assets/stone.png',
-                        width: rockD,
-                        height: rockD,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-            ),
+              ),
             ),
           ),
           // 計時器 — 書本頁碼風格，低調放底部
