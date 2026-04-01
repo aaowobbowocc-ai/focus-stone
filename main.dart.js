@@ -94808,7 +94808,7 @@ s===$&&A.a()
 s=A.hf(s,new A.avn(q),A.kS(q.fy?"assets/stone_reading_flower.png":"assets/stone_reading.png",B.J,p,B.cD,m,m))}else{s=q.z
 s===$&&A.a()
 r=B.i8[q.ay]
-s=A.hf(s,new A.avo(q),A.kS(r,B.J,p,B.cD,m,m))}n=A.b([new A.AM(B.p9,h,p),g,f,A.fZ(p,A.hZ(A.cO(p,s,B.G,!1,p,p,p,p,p,p,p,new A.avp(a),p,p,p,p,p,p,q.gRb(),p,p,p,p,p,p),p,p),p,p,(l-1024*i)/2+540*i-m/2,p,(n-576*i)/2+478*i-m,p)],t.p)
+s=A.hf(s,new A.avo(q),A.kS(r,B.J,p,B.cD,m,m))}n=A.b([new A.AM(B.p9,h,p),g,f,A.fZ(p,A.hZ(A.cO(p,s,B.G,!1,p,p,p,p,p,p,p,new A.avp(a),p,p,p,p,p,p,q.gRb(),p,p,p,p,p,p),p,p),p,p,(l-1024*i)/2+540*i-m/2,p,(n-576*i)/2+515*i-m,p)],t.p)
 if(q.db)n.push(A.fZ(20,A.hZ(A.aD(q.gTu(),p,p,p,A.cE(p,p,A.a3(140,B.F.n()>>>16&255,B.F.n()>>>8&255,B.F.n()&255),p,p,p,p,p,p,p,B.q0,18,p,p,B.pD,p,p,!0,p,6,p,p,p,p,p,p),p,p),p,p),p,p,0,0,p,p))
 return A.x4(p,B.hj,A.fB(B.bm,n,B.Q,B.UG))}}
 A.avr.prototype={
@@ -95157,7 +95157,7 @@ r=A.bE(a6,a4,s).w.a
 q=A.bE(a6,a4,s).w
 s=A.bE(a6,a4,s).w
 p=r.a
-o=B.c.c8(p*0.42,120,170)
+o=B.c.c8(p*0.34,100,150)
 n=o/2
 m=p*0.6
 l=r.b

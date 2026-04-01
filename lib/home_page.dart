@@ -1015,7 +1015,7 @@ class _HomePageState extends State<HomePage>
         final botPad = MediaQuery.of(context).padding.bottom;
 
     // 石頭坐在地毯上（背景圖地毯約在 h*0.80）
-    final rockD = (size.width * 0.42).clamp(120.0, 170.0);
+    final rockD = (size.width * 0.34).clamp(100.0, 150.0);
     final rockR = rockD / 2;
     final rockCX = size.width * 0.60; // 地毯右側
     final rockCY = size.height * 0.80 - rockR * 0.2; // 地毯下方
@@ -1271,7 +1271,7 @@ class _HomePageState extends State<HomePage>
     // 計算 BoxFit.cover 後石頭實際螢幕座標
     // 背景圖 1024×576，地毯中心約在圖片 (540, 478)
     const bgW = 1024.0, bgH = 576.0;
-    const stoneImgX = 540.0, stoneImgY = 478.0;
+    const stoneImgX = 540.0, stoneImgY = 515.0;
     final scaleW = size.width / bgW;
     final scaleH = size.height / bgH;
     final scale = scaleW > scaleH ? scaleW : scaleH;
