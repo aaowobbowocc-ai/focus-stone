@@ -1267,6 +1267,19 @@ class _HomePageState extends State<HomePage>
   Widget _buildLandscape(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final rockD = (size.height * 0.35).clamp(80.0, 140.0);
+
+    // 計算 BoxFit.cover 後石頭實際螢幕座標
+    // 背景圖 1024×576，地毯中心約在圖片 (540, 478)
+    const bgW = 1024.0, bgH = 576.0;
+    const stoneImgX = 540.0, stoneImgY = 478.0;
+    final scaleW = size.width / bgW;
+    final scaleH = size.height / bgH;
+    final scale = scaleW > scaleH ? scaleW : scaleH;
+    final imgLeft = (size.width  - bgW * scale) / 2;
+    final imgTop  = (size.height - bgH * scale) / 2;
+    final stoneCX = imgLeft + stoneImgX * scale;
+    final stoneCY = imgTop  + stoneImgY * scale;
+
     return Scaffold(
       backgroundColor: const Color(0xFF3B2010),
       body: Stack(
@@ -1301,11 +1314,10 @@ class _HomePageState extends State<HomePage>
               ),
             ),
           ),
-          // 石頭坐在地毯上（橫屏：地毯約在畫面下方18%處）
+          // 石頭坐在地毯上（位置根據 BoxFit.cover 實際圖片座標計算）
           Positioned(
-            bottom: size.height * 0.18,
-            left: size.width * 0.38,
-            right: size.width * 0.38,
+            left: stoneCX - rockD / 2,
+            top:  stoneCY - rockD,
             child: Center(
               child: GestureDetector(
                 onTap: _onRockTap,

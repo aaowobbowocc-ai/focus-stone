@@ -94802,15 +94802,15 @@ return A.x($async$ym,r)},
 gTu(){var s=this.dx,r=B.f.bq(s,60),q=B.f.ba(s,60)
 return B.d.ep(B.f.k(r),2,"0")+":"+B.d.ep(B.f.k(q),2,"0")},
 J(a){return new A.DM(new A.awL(this),null)},
-a6x(a){var s,r,q=this,p=null,o=A.bE(a,p,t.w).w.a,n=o.b,m=B.c.c8(n*0.35,80,140),l=A.kS("assets/background_landscape.jpg",B.J,p,B.nz,p,p),k=A.i9(A.b0(p,p,B.l,A.aOv(),p,p,p,p,p,p),!0,p),j=A.b0(p,p,B.l,p,new A.b_(p,p,p,p,p,new A.wO(B.J,1.2,B.ew,p,0,A.b([B.A,A.a3(89,B.hj.n()>>>16&255,B.hj.n()>>>8&255,B.hj.n()&255)],t.t_),p,p),B.x),p,p,p,p,p),i=o.a*0.38
+a6x(a){var s,r,q=this,p=null,o=A.bE(a,p,t.w).w.a,n=o.b,m=B.c.c8(n*0.35,80,140),l=o.a,k=l/1024,j=n/576,i=k>j?k:j,h=A.kS("assets/background_landscape.jpg",B.J,p,B.nz,p,p),g=A.i9(A.b0(p,p,B.l,A.aOv(),p,p,p,p,p,p),!0,p),f=A.b0(p,p,B.l,p,new A.b_(p,p,p,p,p,new A.wO(B.J,1.2,B.ew,p,0,A.b([B.A,A.a3(89,B.hj.n()>>>16&255,B.hj.n()>>>8&255,B.hj.n()&255)],t.t_),p,p),B.x),p,p,p,p,p)
 if(q.db){s=q.x
 s===$&&A.a()
 s=A.hf(s,new A.avn(q),A.kS(q.fy?"assets/stone_reading_flower.png":"assets/stone_reading.png",B.J,p,B.cD,m,m))}else{s=q.z
 s===$&&A.a()
 r=B.i8[q.ay]
-s=A.hf(s,new A.avo(q),A.kS(r,B.J,p,B.cD,m,m))}i=A.b([new A.AM(B.p9,l,p),k,j,A.fZ(n*0.18,A.hZ(A.cO(p,s,B.G,!1,p,p,p,p,p,p,p,new A.avp(a),p,p,p,p,p,p,q.gRb(),p,p,p,p,p,p),p,p),p,p,i,i,p,p)],t.p)
-if(q.db)i.push(A.fZ(20,A.hZ(A.aD(q.gTu(),p,p,p,A.cE(p,p,A.a3(140,B.F.n()>>>16&255,B.F.n()>>>8&255,B.F.n()&255),p,p,p,p,p,p,p,B.q0,18,p,p,B.pD,p,p,!0,p,6,p,p,p,p,p,p),p,p),p,p),p,p,0,0,p,p))
-return A.x4(p,B.hj,A.fB(B.bm,i,B.Q,B.UG))}}
+s=A.hf(s,new A.avo(q),A.kS(r,B.J,p,B.cD,m,m))}n=A.b([new A.AM(B.p9,h,p),g,f,A.fZ(p,A.hZ(A.cO(p,s,B.G,!1,p,p,p,p,p,p,p,new A.avp(a),p,p,p,p,p,p,q.gRb(),p,p,p,p,p,p),p,p),p,p,(l-1024*i)/2+540*i-m/2,p,(n-576*i)/2+478*i-m,p)],t.p)
+if(q.db)n.push(A.fZ(20,A.hZ(A.aD(q.gTu(),p,p,p,A.cE(p,p,A.a3(140,B.F.n()>>>16&255,B.F.n()>>>8&255,B.F.n()&255),p,p,p,p,p,p,p,B.q0,18,p,p,B.pD,p,p,!0,p,6,p,p,p,p,p,p),p,p),p,p),p,p,0,0,p,p))
+return A.x4(p,B.hj,A.fB(B.bm,n,B.Q,B.UG))}}
 A.avr.prototype={
 $0(){var s=this,r=s.a
 r.ax=s.b
