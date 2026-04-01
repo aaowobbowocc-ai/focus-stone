@@ -55,10 +55,13 @@ class StoneAvatar extends StatelessWidget {
             : [],
       ),
       child: ClipOval(
-        child: Image.asset(
-          imgPath ?? 'assets/stone_normal.png',
-          width: size, height: size, fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => CustomPaint(size: Size(size, size), painter: _StonePainter(safeId)),
+        child: Container(
+          color: const Color(0xFFF5ECD8),
+          child: Image.asset(
+            imgPath ?? 'assets/stone_normal.png',
+            width: size, height: size, fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => CustomPaint(size: Size(size, size), painter: _StonePainter(safeId)),
+          ),
         ),
       ),
     );
