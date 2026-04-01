@@ -1026,7 +1026,7 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildLandscape(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final rockD = (size.height * 0.55).clamp(120.0, 220.0);
+    final rockD = (size.height * 0.35).clamp(80.0, 140.0);
     return Scaffold(
       backgroundColor: const Color(0xFF3B2010),
       body: Stack(
@@ -1059,11 +1059,11 @@ class _HomePageState extends State<HomePage>
               ),
             ),
           ),
-          // 石頭坐在地毯上（橫屏：置中偏下，對應背景地毯位置）
+          // 石頭坐在地毯上（橫屏：地毯約在畫面下方18%處）
           Positioned(
-            bottom: size.height * 0.08,
-            left: size.width * 0.35,
-            right: size.width * 0.35,
+            bottom: size.height * 0.18,
+            left: size.width * 0.38,
+            right: size.width * 0.38,
             child: Center(
               child: GestureDetector(
                 onTap: _onRockTap,
