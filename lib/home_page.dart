@@ -829,21 +829,11 @@ class _HomePageState extends State<HomePage>
                         angle: _swayAnim.value,
                         child: child,
                       ),
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Image.asset(
-                            StoneAvatar.imagePaths[_avatarId] ?? 'assets/stone.png',
-                            width: rockD, height: rockD, fit: BoxFit.contain),
-                          Positioned(
-                            bottom: -4, right: -4,
-                            child: Text(
-                              _goalReached ? '🌸' : '📖',
-                              style: TextStyle(fontSize: rockD * 0.28),
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: Image.asset(
+                        _goalReached
+                            ? 'assets/stone_reading_flower.png'
+                            : 'assets/stone_reading.png',
+                        width: rockD, height: rockD, fit: BoxFit.contain),
                     )
                   : AnimatedBuilder(
                       animation: _jumpController,
@@ -1075,21 +1065,11 @@ class _HomePageState extends State<HomePage>
                           angle: _swayAnim.value,
                           child: child,
                         ),
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Image.asset(
-                              StoneAvatar.imagePaths[_avatarId] ?? 'assets/stone.png',
-                              width: rockD, height: rockD, fit: BoxFit.contain),
-                            Positioned(
-                              bottom: -4, right: -4,
-                              child: Text(
-                                _goalReached ? '🌸' : '📖',
-                                style: TextStyle(fontSize: rockD * 0.28),
-                              ),
-                            ),
-                          ],
-                        ),
+                        child: Image.asset(
+                          _goalReached
+                              ? 'assets/stone_reading_flower.png'
+                              : 'assets/stone_reading.png',
+                          width: rockD, height: rockD, fit: BoxFit.contain),
                       )
                     : AnimatedBuilder(
                         animation: _jumpController,
