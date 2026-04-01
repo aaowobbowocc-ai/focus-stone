@@ -1062,19 +1062,8 @@ class _HomePageState extends State<HomePage>
               onLongPress: () => PushService.requestPermission(context),
               child: _isStudying
                   ? _inPomodoroBreak
-                      ? Image.asset('assets/stone_sleepy.png', width: rockD, height: rockD, fit: BoxFit.contain)
-                      : AnimatedBuilder(
-                          animation: _swayController,
-                          builder: (ctx, child) => Transform.rotate(
-                            angle: _swayAnim.value,
-                            child: child,
-                          ),
-                          child: Image.asset(
-                            _goalReached
-                                ? 'assets/stone_reading_flower.png'
-                                : 'assets/stone_reading.png',
-                            width: rockD, height: rockD, fit: BoxFit.contain),
-                        )
+                      ? _ReadingOverlay(avatarId: _avatarId, rockD: rockD, swayController: _swayController, swayAnim: _swayAnim, badge: '😴')
+                      : _ReadingOverlay(avatarId: _avatarId, rockD: rockD, swayController: _swayController, swayAnim: _swayAnim, badge: _goalReached ? '🌸' : '📖')
                   : AnimatedBuilder(
                       animation: _jumpController,
                       builder: (ctx, child) => Transform.translate(
@@ -1323,18 +1312,7 @@ class _HomePageState extends State<HomePage>
                 onTap: _onRockTap,
                 onLongPress: () => PushService.requestPermission(context),
                 child: _isStudying
-                    ? AnimatedBuilder(
-                        animation: _swayController,
-                        builder: (ctx, child) => Transform.rotate(
-                          angle: _swayAnim.value,
-                          child: child,
-                        ),
-                        child: Image.asset(
-                          _goalReached
-                              ? 'assets/stone_reading_flower.png'
-                              : 'assets/stone_reading.png',
-                          width: rockD, height: rockD, fit: BoxFit.contain),
-                      )
+                    ? _ReadingOverlay(avatarId: _avatarId, rockD: rockD, swayController: _swayController, swayAnim: _swayAnim, badge: _inPomodoroBreak ? '😴' : (_goalReached ? '🌸' : '📖'))
                     : AnimatedBuilder(
                         animation: _jumpController,
                         builder: (ctx, child) => Transform.translate(
@@ -1445,6 +1423,51 @@ class _KraftBubble extends StatelessWidget {
           painter: _KraftTailPainter(),
         ),
       ],
+    );
+  }
+}
+
+// ────────────────────────────────────────
+// 讀書疊層：當前頭像 + 書本/花朵 badge
+// ────────────────────────────────────────
+class _ReadingOverlay extends StatelessWidget {
+  final int avatarId;
+  final double rockD;
+  final AnimationController swayController;
+  final Animation<double> swayAnim;
+  final String badge; // '📖' | '🌸' | '😴'
+
+  const _ReadingOverlay({
+    required this.avatarId,
+    required this.rockD,
+    required this.swayController,
+    required this.swayAnim,
+    required this.badge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: swayController,
+      builder: (_, child) => Transform.rotate(angle: swayAnim.value, child: child),
+      child: SizedBox(
+        width: rockD,
+        height: rockD,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Image.asset(
+              StoneAvatar.imagePaths[avatarId.clamp(0, StoneAvatar.imagePaths.length - 1)] ?? 'assets/stone.png',
+              width: rockD, height: rockD, fit: BoxFit.contain,
+            ),
+            Positioned(
+              bottom: -rockD * 0.08,
+              right: -rockD * 0.08,
+              child: Text(badge, style: TextStyle(fontSize: rockD * 0.32)),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
