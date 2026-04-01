@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:html' as html;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'push_service.dart';
 import 'help_page.dart';
@@ -15,6 +17,7 @@ import 'shop_page.dart';
 import 'changelog_page.dart';
 import 'firebase_service.dart';
 import 'stone_avatar.dart';
+import 'achievements_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -62,6 +65,16 @@ class _HomePageState extends State<HomePage>
   Timer? _bubbleTimer;
   Timer? _midStudyTimer;
 
+  // ── 明信片 ──
+  final GlobalKey _postcardKey = GlobalKey();
+
+  // ── 番茄鐘 ──
+  bool _pomodoroMode = false;
+  bool _inPomodoroBreak = false;
+  int _pomodoroRound = 0;
+  int _breakSecondsLeft = 300;
+  Timer? _breakTimer;
+
   @override
   void initState() {
     super.initState();
@@ -107,6 +120,7 @@ class _HomePageState extends State<HomePage>
     _studyTimer?.cancel();
     _bubbleTimer?.cancel();
     _midStudyTimer?.cancel();
+    _breakTimer?.cancel();
     _bubbleController.dispose();
     _rockController.dispose();
     _swayController.dispose();
@@ -403,6 +417,7 @@ class _HomePageState extends State<HomePage>
     final nameCtrl = TextEditingController();
     final goalCtrl = TextEditingController();
 
+    bool pomodoroEnabled = false;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) {
@@ -419,7 +434,7 @@ class _HomePageState extends State<HomePage>
             borderSide: const BorderSide(color: Color(0xFF7B4F2E), width: 2),
           ),
         );
-        return AlertDialog(
+        return StatefulBuilder(builder: (ctx, setSB) => AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: const Color(0xFFF5E6C8),
@@ -450,32 +465,92 @@ class _HomePageState extends State<HomePage>
                 style: const TextStyle(color: Color(0xFF4A2C0A)),
               ),
               const SizedBox(height: 4),
-              const Text('目標時間',
-                  style: TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF8B5E3C),
-                      fontWeight: FontWeight.w600)),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: goalCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: fieldDeco.copyWith(
-                          hintText: '0',
-                          hintStyle: const TextStyle(
-                              fontSize: 13, color: Color(0xFFAA8866))),
-                      style: const TextStyle(color: Color(0xFF4A2C0A)),
+              AnimatedCrossFade(
+                duration: const Duration(milliseconds: 200),
+                crossFadeState: pomodoroEnabled
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+                firstChild: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('目標時間',
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF8B5E3C),
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: goalCtrl,
+                            keyboardType: TextInputType.number,
+                            decoration: fieldDeco.copyWith(
+                                hintText: '0',
+                                hintStyle: const TextStyle(
+                                    fontSize: 13, color: Color(0xFFAA8866))),
+                            style: const TextStyle(color: Color(0xFF4A2C0A)),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('分鐘',
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF8B5E3C),
+                                fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ],
+                ),
+                secondChild: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFE0B2),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFFF8C00)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Text('🍅', style: TextStyle(fontSize: 18)),
+                      SizedBox(width: 8),
+                      Text('25 分讀書 + 5 分休息',
+                          style: TextStyle(fontSize: 13, color: Color(0xFF4A2C0A), fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: () => setSB(() => pomodoroEnabled = !pomodoroEnabled),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: pomodoroEnabled
+                        ? const Color(0xFF7B4F2E).withOpacity(0.1)
+                        : const Color(0xFFEDD9A3),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: pomodoroEnabled
+                          ? const Color(0xFF7B4F2E)
+                          : const Color(0xFF8B5E3C),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  const Text('分鐘',
-                      style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF8B5E3C),
-                          fontWeight: FontWeight.w600)),
-                ],
+                  child: Row(
+                    children: [
+                      const Text('🍅', style: TextStyle(fontSize: 16)),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text('開啟番茄鐘模式',
+                            style: TextStyle(fontSize: 13, color: Color(0xFF4A2C0A))),
+                      ),
+                      Icon(
+                        pomodoroEnabled ? Icons.check_box : Icons.check_box_outline_blank,
+                        color: const Color(0xFF7B4F2E),
+                        size: 20,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -493,13 +568,13 @@ class _HomePageState extends State<HomePage>
                       fontWeight: FontWeight.bold)),
             ),
           ],
-        );
+        ));
       },
     );
     if (confirmed != true) return;
 
     final name = nameCtrl.text.trim();
-    final goal = int.tryParse(goalCtrl.text.trim()) ?? 0;
+    final goal = pomodoroEnabled ? 25 : (int.tryParse(goalCtrl.text.trim()) ?? 0);
 
     _studyStartTime = DateTime.now();
     setState(() {
@@ -508,7 +583,12 @@ class _HomePageState extends State<HomePage>
       _sessionName = name;
       _goalMinutes = goal > 0 ? goal : 0;
       _goalReached = false;
-      _currentQuote = getStudyStartQuote(name);
+      _pomodoroMode = pomodoroEnabled;
+      _inPomodoroBreak = false;
+      _pomodoroRound = pomodoroEnabled ? 1 : 0;
+      _currentQuote = pomodoroEnabled
+          ? '🍅 番茄鐘第一輪開始！專心 25 分鐘！'
+          : getStudyStartQuote(name);
     });
     _showBubble(autoFade: false);
     _startReadingAnimations();
@@ -523,12 +603,75 @@ class _HomePageState extends State<HomePage>
     });
   }
 
+  void _startPomodoroBreak() {
+    _studyTimer?.cancel();
+    setState(() {
+      _inPomodoroBreak = true;
+      _breakSecondsLeft = 300;
+      _currentQuote = '☕ 休息一下！5 分鐘後繼續加油！';
+    });
+    _showBubble(autoFade: false);
+    _stopReadingAnimations();
+    _breakTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() => _breakSecondsLeft--);
+      if (_breakSecondsLeft <= 0) {
+        _breakTimer?.cancel();
+        _onBreakFinished();
+      }
+    });
+  }
+
+  void _onBreakFinished() {
+    setState(() {
+      _inPomodoroBreak = false;
+      _pomodoroRound++;
+      _goalMinutes = 25;
+      _goalReached = false;
+      _currentQuote = '🍅 第 $_pomodoroRound 輪開始！繼續衝！';
+    });
+    _showBubble(autoFade: false);
+    _startReadingAnimations();
+    _studyStartTime = DateTime.now();
+    _studyTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final elapsed = DateTime.now().difference(_studyStartTime!).inSeconds;
+      setState(() => _studySeconds += 1);
+      if (!_goalReached && _studySeconds >= _goalMinutes * 60) {
+        _onGoalReached();
+      }
+    });
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: const Color(0xFFF5E6C8),
+        title: Text('🍅 第 $_pomodoroRound 輪開始！',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
+        content: const Text('休息結束！繼續 25 分鐘！',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFF8B5E3C))),
+        actions: [
+          Center(child: TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('衝！💪', style: TextStyle(color: Color(0xFF7B4F2E), fontWeight: FontWeight.bold)),
+          )),
+        ],
+      ),
+    );
+  }
+
   void _onGoalReached() {
     setState(() {
       _goalReached = true;
-      _currentQuote = getGoalReachedQuote(_goalMinutes);
+      _currentQuote = _pomodoroMode ? '🍅 這輪完成！準備休息囉～' : getGoalReachedQuote(_goalMinutes);
     });
     _showBubble(autoFade: false);
+    if (_pomodoroMode) {
+      _startPomodoroBreak();
+      return;
+    }
 
     showDialog(
       context: context,
@@ -592,7 +735,9 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _stopStudy() async {
     _studyTimer?.cancel();
+    _breakTimer?.cancel();
     _stopReadingAnimations();
+    setState(() { _inPomodoroBreak = false; _pomodoroMode = false; });
     final secs = _studySeconds;
     final goalNotReached = _goalMinutes > 0 && !_goalReached && secs < _goalMinutes * 60;
     final now = DateTime.now();
@@ -674,21 +819,95 @@ class _HomePageState extends State<HomePage>
           ],
         ),
         actions: [
-          Center(
-            child: TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(goalNotReached ? '知道了...' : '太好了！',
-                  style: const TextStyle(fontSize: 16)),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(goalNotReached ? '知道了...' : '太好了！',
+                    style: const TextStyle(fontSize: 16)),
+              ),
+              if (!goalNotReached)
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showPostcard(secs, _sessionName);
+                  },
+                  child: const Text('存明信片 🌸',
+                      style: TextStyle(color: Color(0xFF7B4F2E), fontWeight: FontWeight.bold)),
+                ),
+            ],
           ),
         ],
       ),
     );
   }
 
+  Future<void> _showPostcard(int secs, String sessionName) async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFFF5E6C8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.all(16),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RepaintBoundary(
+              key: _postcardKey,
+              child: _PostcardWidget(
+                avatarId: _avatarId,
+                secs: secs,
+                sessionName: sessionName,
+                date: DateTime.now(),
+                rockName: _rockName,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('關閉', style: TextStyle(color: Color(0xFFAA8866))),
+                ),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF7B4F2E),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.download, size: 16),
+                  label: const Text('儲存'),
+                  onPressed: () async {
+                    try {
+                      final boundary = _postcardKey.currentContext!
+                          .findRenderObject() as RenderRepaintBoundary;
+                      final image = await boundary.toImage(pixelRatio: 3.0);
+                      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+                      final bytes = byteData!.buffer.asUint8List();
+                      final blob = html.Blob([bytes]);
+                      final url = html.Url.createObjectUrlFromBlob(blob);
+                      html.AnchorElement(href: url)
+                        ..setAttribute('download', 'focus_stone_${DateTime.now().millisecondsSinceEpoch}.png')
+                        ..click();
+                      html.Url.revokeObjectUrl(url);
+                    } catch (_) {}
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _failStudy() async {
     _studyTimer?.cancel();
+    _breakTimer?.cancel();
     _stopReadingAnimations();
+    setState(() { _inPomodoroBreak = false; _pomodoroMode = false; });
     final secs = _studySeconds;
     final now = DateTime.now();
     StudyHistory.save(StudySession(date: now, durationSeconds: secs, failed: true, name: _sessionName));
@@ -754,6 +973,22 @@ class _HomePageState extends State<HomePage>
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  // ── 季節色調疊層 ──
+  static Color _seasonOverlay() {
+    final now = DateTime.now();
+    final month = now.month;
+    final hour = now.hour;
+    // 時段疊層（優先）
+    if (hour >= 5 && hour < 7) return const Color(0x18FFD580);  // 清晨：淡金
+    if (hour >= 17 && hour < 20) return const Color(0x1AFF7043); // 黃昏：橙紅
+    if (hour >= 20 || hour < 5)  return const Color(0x12536DFE); // 夜晚：靛藍
+    // 季節疊層
+    if (month >= 3 && month <= 5)  return const Color(0x14FFB7C5); // 春：粉櫻
+    if (month >= 6 && month <= 8)  return const Color(0x12FFD600); // 夏：金陽
+    if (month >= 9 && month <= 11) return const Color(0x14FF8C42); // 秋：楓橙
+    return const Color(0x14ADE8F4);                                 // 冬：冰藍
+  }
+
   // 背景圖原始尺寸 512×896，BoxFit.contain 置中
   static const double _bgW = 512, _bgH = 896;
   static double _imgScale(Size s) =>
@@ -813,6 +1048,9 @@ class _HomePageState extends State<HomePage>
             ),
           ),
 
+          // ── 季節色調疊層 ──
+          Positioned.fill(child: IgnorePointer(child: Container(color: _seasonOverlay()))),
+
           // ── 石頭（讀書中顯示抱書版） ──
           Positioned(
             left: rockCX - rockR,
@@ -823,18 +1061,20 @@ class _HomePageState extends State<HomePage>
               onTap: _onRockTap,
               onLongPress: () => PushService.requestPermission(context),
               child: _isStudying
-                  ? AnimatedBuilder(
-                      animation: _swayController,
-                      builder: (ctx, child) => Transform.rotate(
-                        angle: _swayAnim.value,
-                        child: child,
-                      ),
-                      child: Image.asset(
-                        _goalReached
-                            ? 'assets/stone_reading_flower.png'
-                            : 'assets/stone_reading.png',
-                        width: rockD, height: rockD, fit: BoxFit.contain),
-                    )
+                  ? _inPomodoroBreak
+                      ? Image.asset('assets/stone_sleepy.png', width: rockD, height: rockD, fit: BoxFit.contain)
+                      : AnimatedBuilder(
+                          animation: _swayController,
+                          builder: (ctx, child) => Transform.rotate(
+                            angle: _swayAnim.value,
+                            child: child,
+                          ),
+                          child: Image.asset(
+                            _goalReached
+                                ? 'assets/stone_reading_flower.png'
+                                : 'assets/stone_reading.png',
+                            width: rockD, height: rockD, fit: BoxFit.contain),
+                        )
                   : AnimatedBuilder(
                       animation: _jumpController,
                       builder: (ctx, child) => Transform.translate(
@@ -985,6 +1225,10 @@ class _HomePageState extends State<HomePage>
                                   onTap: () { setState(() => _menuOpen = false);
                                     ChangelogPage.show(context); }),
                               const SizedBox(width: 8),
+                              _TopButton(icon: Icons.emoji_events_outlined,
+                                  onTap: () { setState(() => _menuOpen = false);
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AchievementsPage())); }),
+                              const SizedBox(width: 8),
                               _TopButton(icon: Icons.help_outline,
                                   onTap: () { setState(() => _menuOpen = false);
                                     HelpPage.show(context); }),
@@ -1003,7 +1247,13 @@ class _HomePageState extends State<HomePage>
             left: 24,
             right: 24,
             child: _isStudying
-                ? _StudyActiveBar(timerDisplay: _timerDisplay, onStop: _stopStudy)
+                ? _StudyActiveBar(
+                    timerDisplay: _timerDisplay,
+                    onStop: _stopStudy,
+                    inBreak: _inPomodoroBreak,
+                    breakSecondsLeft: _breakSecondsLeft,
+                    pomodoroRound: _pomodoroRound,
+                  )
                 : _StudyStartButton(onStart: _startStudy),
           ),
 
@@ -1036,6 +1286,8 @@ class _HomePageState extends State<HomePage>
               alignment: Alignment.center,
             ),
           ),
+          // 季節色調疊層
+          IgnorePointer(child: Container(color: _seasonOverlay())),
           // 四角暈影，增加沉浸感
           Container(
             decoration: BoxDecoration(
@@ -1185,6 +1437,89 @@ class _KraftBubble extends StatelessWidget {
   }
 }
 
+// ────────────────────────────────────────
+// 讀書明信片
+// ────────────────────────────────────────
+class _PostcardWidget extends StatelessWidget {
+  final int avatarId;
+  final int secs;
+  final String sessionName;
+  final DateTime date;
+  final String rockName;
+  const _PostcardWidget({
+    required this.avatarId,
+    required this.secs,
+    required this.sessionName,
+    required this.date,
+    required this.rockName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final m = secs ~/ 60;
+    final s = secs % 60;
+    final timeStr = '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    final dateStr = '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
+    return Container(
+      width: 280,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5E6C8),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF8B5E3C), width: 2),
+        boxShadow: [BoxShadow(color: Colors.brown.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('FocusStone 📬', style: TextStyle(fontSize: 11, color: Color(0xFFAA8866))),
+              Text(dateStr, style: const TextStyle(fontSize: 11, color: Color(0xFFAA8866))),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Image.asset(
+            StoneAvatar.imagePaths[avatarId.clamp(0, StoneAvatar.imagePaths.length - 1)] ?? 'assets/stone.png',
+            width: 80, height: 80, fit: BoxFit.contain,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            rockName.isEmpty ? '我的小石頭' : rockName,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF8B5E3C), fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEDD9A3),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF8B5E3C)),
+            ),
+            child: Text(
+              timeStr,
+              style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Color(0xFF7B4F2E)),
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text('讀書時長', style: TextStyle(fontSize: 12, color: Color(0xFF8B5E3C))),
+          if (sessionName.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              sessionName,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF4A2C0A), fontWeight: FontWeight.w600),
+            ),
+          ],
+          const SizedBox(height: 10),
+          const Text('今日也努力讀書了 🌸', style: TextStyle(fontSize: 12, color: Color(0xFF8B5E3C))),
+        ],
+      ),
+    );
+  }
+}
+
 class _KraftTailPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -1253,14 +1588,29 @@ class _StudyStartButton extends StatelessWidget {
 class _StudyActiveBar extends StatelessWidget {
   final String timerDisplay;
   final VoidCallback onStop;
-  const _StudyActiveBar({required this.timerDisplay, required this.onStop});
+  final bool inBreak;
+  final int breakSecondsLeft;
+  final int pomodoroRound;
+  const _StudyActiveBar({
+    required this.timerDisplay,
+    required this.onStop,
+    this.inBreak = false,
+    this.breakSecondsLeft = 300,
+    this.pomodoroRound = 0,
+  });
+
+  String get _breakDisplay {
+    final m = breakSecondsLeft ~/ 60;
+    final s = breakSecondsLeft % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF5D3720),
+        color: inBreak ? const Color(0xFF3D6B4F) : const Color(0xFF5D3720),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -1271,16 +1621,27 @@ class _StudyActiveBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Text('📖', style: TextStyle(fontSize: 22)),
+          Text(inBreak ? '☕' : '📖', style: const TextStyle(fontSize: 22)),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              timerDisplay,
-              style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontFeatures: [FontFeature.tabularFigures()]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (pomodoroRound > 0)
+                  Text(
+                    inBreak ? '休息時間' : '🍅 第 $pomodoroRound 輪',
+                    style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.7)),
+                  ),
+                Text(
+                  inBreak ? _breakDisplay : timerDisplay,
+                  style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontFeatures: [FontFeature.tabularFigures()]),
+                ),
+              ],
             ),
           ),
           GestureDetector(

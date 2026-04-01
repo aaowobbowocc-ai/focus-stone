@@ -18,6 +18,7 @@ class _FriendsPageState extends State<FriendsPage> {
   List<Map<String, dynamic>> _leaderboard = [];
   List<Map<String, dynamic>> _recommended = [];
   List<Map<String, dynamic>> _todayComparison = [];
+  List<Map<String, dynamic>> _encouragements = [];
   bool _loading = true;
 
   @override
@@ -47,6 +48,8 @@ class _FriendsPageState extends State<FriendsPage> {
       if (mounted) setState(() => _todayComparison = today);
       final rec = await FirebaseService.getRecommendedUsers();
       if (mounted) setState(() => _recommended = rec);
+      final enc = await FirebaseService.getEncouragements();
+      if (mounted) setState(() => _encouragements = enc);
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
@@ -198,6 +201,44 @@ class _FriendsPageState extends State<FriendsPage> {
     _load();
   }
 
+  Future<void> _sendEncouragement(Map<String, dynamic> friend) async {
+    final msgs = FirebaseService.encouragementMessages;
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: const Color(0xFFF5E6C8),
+        title: Text('送鼓勵給 ${friend['rockName'] ?? '朋友'}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF4A2C0A))),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: msgs.map((m) => GestureDetector(
+            onTap: () => Navigator.pop(ctx, m),
+            child: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEDD9A3),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF8B5E3C)),
+              ),
+              child: Text(m, style: const TextStyle(fontSize: 13, color: Color(0xFF4A2C0A))),
+            ),
+          )).toList(),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx),
+              child: const Text('取消', style: TextStyle(color: Color(0xFFAA8866)))),
+        ],
+      ),
+    );
+    if (picked == null) return;
+    await FirebaseService.sendEncouragement(friend['uid'] as String, picked);
+    _showSnack('鼓勵送出了！🌸');
+  }
+
   Future<void> _viewFriendHistory(Map<String, dynamic> friend) async {
     final sessions = await FirebaseService.getFriendSessions(friend['uid'] as String);
     if (!mounted) return;
@@ -280,6 +321,79 @@ class _FriendsPageState extends State<FriendsPage> {
                       // 我的邀請碼卡片
                       _MyCodeCard(code: _myCode),
                       const SizedBox(height: 12),
+
+                      // 收到的鼓勵
+                      if (_encouragements.isNotEmpty) ...[
+                        Row(
+                          children: [
+                            const Text('收到的鼓勵',
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF8B5E3C))),
+                            const SizedBox(width: 6),
+                            if (_encouragements.any((e) => !(e['read'] as bool? ?? true)))
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF7043),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${_encouragements.where((e) => !(e['read'] as bool? ?? true)).length}',
+                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 80,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _encouragements.length,
+                            separatorBuilder: (_, __) => const SizedBox(width: 8),
+                            itemBuilder: (_, i) {
+                              final e = _encouragements[i];
+                              final isNew = !(e['read'] as bool? ?? true);
+                              return Container(
+                                width: 180,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isNew ? const Color(0xFFFFE0CC) : const Color(0xFFEDD9A3),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isNew ? const Color(0xFFFF7043) : const Color(0xFF8B5E3C),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(e['fromName'] ?? '???',
+                                        style: const TextStyle(fontSize: 11, color: Color(0xFF7B4F2E), fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 4),
+                                    Text(e['message'] ?? '',
+                                        style: const TextStyle(fontSize: 12, color: Color(0xFF4A2C0A)),
+                                        maxLines: 2, overflow: TextOverflow.ellipsis),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () async {
+                              await FirebaseService.markEncouragementsRead();
+                              setState(() {
+                                _encouragements = _encouragements.map((e) => {...e, 'read': true}).toList();
+                              });
+                            },
+                            child: const Text('全部標為已讀', style: TextStyle(fontSize: 11, color: Color(0xFFAA8866))),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
 
                       // 今日讀書比較
                       if (_todayComparison.isNotEmpty) ...[
@@ -383,6 +497,7 @@ class _FriendsPageState extends State<FriendsPage> {
                         ..._friends.map((f) => _FriendCard(
                           friend: f,
                           onTap: () => _viewFriendHistory(f),
+                          onEncourage: () => _sendEncouragement(f),
                           onRemove: () async {
                             final ok = await showDialog<bool>(
                               context: context,
@@ -546,8 +661,9 @@ class _FriendCard extends StatelessWidget {
   final Map<String, dynamic> friend;
   final VoidCallback onTap;
   final VoidCallback onRemove;
+  final VoidCallback onEncourage;
 
-  const _FriendCard({required this.friend, required this.onTap, required this.onRemove});
+  const _FriendCard({required this.friend, required this.onTap, required this.onRemove, required this.onEncourage});
 
   @override
   Widget build(BuildContext context) {
@@ -579,9 +695,22 @@ class _FriendCard extends StatelessWidget {
               ),
             ),
             GestureDetector(
+              onTap: onEncourage,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                margin: const EdgeInsets.only(right: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF7B4F2E).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF8B5E3C).withOpacity(0.5)),
+                ),
+                child: const Text('🌸', style: TextStyle(fontSize: 16)),
+              ),
+            ),
+            GestureDetector(
               onTap: onRemove,
               child: const Padding(
-                padding: EdgeInsets.only(left: 8),
+                padding: EdgeInsets.only(left: 4),
                 child: Icon(Icons.person_remove, size: 20, color: Color(0xFFAA8866)),
               ),
             ),

@@ -302,6 +302,79 @@ class FirebaseService {
     return result;
   }
 
+  // ── 好友鼓勵 ────────────────────────────────────────────
+  static const List<String> encouragementMessages = [
+    '加油！你一定做得到！🔥',
+    '今天也努力讀書了，棒棒！📚',
+    '石頭都在看著你，繼續衝！🪨',
+    '一起加油！我們都可以的！✊',
+    '辛苦了！休息一下再繼續！☕',
+    '你的努力石頭都記得！🌸',
+    '今天讀了多少？超厲害！⭐',
+    '不要放棄！距離目標更近了！🏆',
+  ];
+
+  /// 送鼓勵給好友
+  static Future<void> sendEncouragement(String toUid, String message) async {
+    final id = uid;
+    if (id == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final rockName = prefs.getString('rock_name') ?? '無名石頭';
+    final avatarId = prefs.getInt('avatar_id') ?? 0;
+    await _db.collection('users').doc(toUid).collection('encouragements').add({
+      'fromUid': id,
+      'fromName': rockName,
+      'fromAvatarId': avatarId,
+      'message': message,
+      'sentAt': FieldValue.serverTimestamp(),
+      'read': false,
+    });
+  }
+
+  /// 取得我收到的鼓勵（最新 20 則）
+  static Future<List<Map<String, dynamic>>> getEncouragements() async {
+    final id = uid;
+    if (id == null) return [];
+    final snap = await _db
+        .collection('users')
+        .doc(id)
+        .collection('encouragements')
+        .orderBy('sentAt', descending: true)
+        .limit(20)
+        .get();
+    return snap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
+  }
+
+  /// 取得未讀鼓勵數量
+  static Future<int> getUnreadEncouragementCount() async {
+    final id = uid;
+    if (id == null) return 0;
+    final snap = await _db
+        .collection('users')
+        .doc(id)
+        .collection('encouragements')
+        .where('read', isEqualTo: false)
+        .get();
+    return snap.docs.length;
+  }
+
+  /// 標記全部鼓勵已讀
+  static Future<void> markEncouragementsRead() async {
+    final id = uid;
+    if (id == null) return;
+    final snap = await _db
+        .collection('users')
+        .doc(id)
+        .collection('encouragements')
+        .where('read', isEqualTo: false)
+        .get();
+    final batch = _db.batch();
+    for (final doc in snap.docs) {
+      batch.update(doc.reference, {'read': true});
+    }
+    await batch.commit();
+  }
+
   /// 取得某用戶最近 N 筆紀錄
   static Future<List<Map<String, dynamic>>> getFriendSessions(
       String friendUid, {int limit = 20}) async {
