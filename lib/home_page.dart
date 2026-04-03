@@ -1255,12 +1255,12 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildLandscape(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final rockD = (size.height * 0.35).clamp(80.0, 140.0);
+    final rockD = (size.height * 0.28).clamp(70.0, 110.0);
 
     // 計算 BoxFit.cover 後石頭實際螢幕座標
     // 背景圖 1024×576，地毯中心約在圖片 (540, 478)
     const bgW = 1024.0, bgH = 576.0;
-    const stoneImgX = 540.0, stoneImgY = 515.0;
+    const stoneImgX = 480.0, stoneImgY = 555.0;
     final scaleW = size.width / bgW;
     final scaleH = size.height / bgH;
     final scale = scaleW > scaleH ? scaleW : scaleH;
